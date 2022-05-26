@@ -29,14 +29,6 @@ const createPages: GatsbyNode["createPages"] = async ({
   reporter,
 }) => {
   const { createPage } = actions
-  const { createRedirect } = actions
-
-  createRedirect({
-    fromPath: `/`,
-    toPath: `/blog/`,
-    isPermanent: true,
-    redirectInBrowser: true,
-  })
 
   const postTemplate = resolve("./src/templates/Blog/Post.tsx")
   const postsTemplate = resolve("./src/templates/Blog/Posts.tsx")

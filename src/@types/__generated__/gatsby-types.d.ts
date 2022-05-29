@@ -8392,25 +8392,6 @@ type Unnamed_1_Query = { readonly contentfulPage: Maybe<(
     & { readonly body: Maybe<{ readonly childMdx: Maybe<Pick<Mdx, 'body'>> }> }
   )> };
 
-type PostBySlugQueryVariables = Exact<{
-  slug: Scalars['String'];
-  previousPostSlug: Maybe<Scalars['String']>;
-  nextPostSlug: Maybe<Scalars['String']>;
-}>;
-
-
-type PostBySlugQuery = { readonly post: Maybe<(
-    Pick<ContentfulPost, 'slug' | 'title' | 'tags' | 'updatedAt'>
-    & { rawDate: ContentfulPost['updatedAt'] }
-    & { readonly description: Maybe<Pick<contentfulPostDescriptionTextNode, 'description'>>, readonly heroImage: Maybe<(
-      Pick<ContentfulAsset, 'gatsbyImageData'>
-      & { readonly resize: Maybe<Pick<RemoteFileResize, 'src'>> }
-    )>, readonly body: Maybe<(
-      Pick<contentfulPostBodyTextNode, 'body'>
-      & { readonly childMdx: Maybe<Pick<Mdx, 'body'>> }
-    )>, readonly authors: Maybe<ReadonlyArray<Maybe<Pick<ContentfulAuthor, 'name'>>>> }
-  )>, readonly previous: Maybe<Pick<ContentfulPost, 'slug' | 'title'>>, readonly next: Maybe<Pick<ContentfulPost, 'slug' | 'title'>> };
-
 type PostsQueryVariables = Exact<{
   tag: Maybe<ReadonlyArray<Maybe<Scalars['String']>> | Maybe<Scalars['String']>>;
   authorId: Maybe<Scalars['String']>;
@@ -8430,6 +8411,25 @@ type PostsQuery = { readonly posts: { readonly nodes: ReadonlyArray<(
         )> }
       )>>> }
     )> } };
+
+type PostBySlugQueryVariables = Exact<{
+  slug: Scalars['String'];
+  previousPostSlug: Maybe<Scalars['String']>;
+  nextPostSlug: Maybe<Scalars['String']>;
+}>;
+
+
+type PostBySlugQuery = { readonly post: Maybe<(
+    Pick<ContentfulPost, 'slug' | 'title' | 'tags' | 'updatedAt'>
+    & { rawDate: ContentfulPost['updatedAt'] }
+    & { readonly description: Maybe<Pick<contentfulPostDescriptionTextNode, 'description'>>, readonly heroImage: Maybe<(
+      Pick<ContentfulAsset, 'gatsbyImageData'>
+      & { readonly resize: Maybe<Pick<RemoteFileResize, 'src'>> }
+    )>, readonly body: Maybe<(
+      Pick<contentfulPostBodyTextNode, 'body'>
+      & { readonly childMdx: Maybe<Pick<Mdx, 'body'>> }
+    )>, readonly authors: Maybe<ReadonlyArray<Maybe<Pick<ContentfulAuthor, 'name'>>>> }
+  )>, readonly previous: Maybe<Pick<ContentfulPost, 'slug' | 'title'>>, readonly next: Maybe<Pick<ContentfulPost, 'slug' | 'title'>> };
 
 type GatsbyImageSharpFixedFragment = Pick<ImageSharpFixed, 'base64' | 'width' | 'height' | 'src' | 'srcSet'>;
 

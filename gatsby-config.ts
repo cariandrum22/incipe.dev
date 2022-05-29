@@ -42,6 +42,10 @@ const config: GatsbyConfig = {
       options: {
         spaceId: process.env.CONTENTFUL_SPACE_ID,
         accessToken: process.env.CONTENTFUL_ACCESS_TOKEN,
+        host:
+          process.env.NODE_ENV === "production"
+            ? `cdn.contentful.com`
+            : `preview.contentful.com`,
       },
     },
     {

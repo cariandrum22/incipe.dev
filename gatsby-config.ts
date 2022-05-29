@@ -156,6 +156,7 @@ const config: GatsbyConfig = {
         }),
       },
     },
+    `gatsby-plugin-robots-txt`,
   ],
 }
 

@@ -16,6 +16,7 @@ const gatsbyRequiredRules = path.join(
 )
 
 const myId = `cariandrum22`
+const googleFontsCSSAPI = `https://fonts.googleapis.com/css2`
 
 const config: GatsbyConfig = {
   siteMetadata: {
@@ -78,11 +79,21 @@ const config: GatsbyConfig = {
       },
     },
     {
-      resolve: `gatsby-plugin-web-font-loader`,
+      resolve: `gatsby-omni-font-loader`,
       options: {
-        google: {
-          families: [`Fira Code`, `Noto Sans Japanesez`],
-        },
+        mode: `async`,
+        enableListener: true,
+        preconnect: [`https://fonts.gstatic.com`],
+        web: [
+          {
+            name: `Fira Code`,
+            file: `${googleFontsCSSAPI}?family=Fira+Code`,
+          },
+          {
+            name: `Noto Sans Japanese`,
+            file: `${googleFontsCSSAPI}?family=Noto+Sans+JP`,
+          },
+        ],
       },
     },
     `gatsby-plugin-react-helmet`,

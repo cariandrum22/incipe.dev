@@ -20,8 +20,8 @@ const myId = `cariandrum22`
 const config: GatsbyConfig = {
   siteMetadata: {
     title: `incipe.dev`,
-    siteUrl: `https://incipe.dev/`,
-    description: `This site is for personal experimentation and portfolio.`,
+    siteUrl: `https://incipe.dev`,
+    description: `This is my personal portfolio and blog site.`,
     author: {
       name: `Takafumi Asano`,
       email: `cariandrum22@gmail.com`,
@@ -105,6 +105,51 @@ const config: GatsbyConfig = {
         gtmAuth: process.env.GOOGLE_TAGMANAGER_AUTH,
         gtmPreview: process.env.GOOGLE_TAGMANAGER_PREVIEW,
         dataLayerName: "dataLayer",
+      },
+    },
+    {
+      resolve: "gatsby-plugin-sitemap",
+      options: {
+        query: `
+        {
+          allSitePage {
+            nodes {
+              path
+            }
+          }
+          allContentfulPost {
+            nodes {
+              updatedAt
+              slug
+            }
+          }
+          site {
+            siteMetadata {
+              siteUrl
+            }
+          }
+        }
+        `,
+        resolvePages: ({
+          allSitePage: { nodes: allPages },
+          allContentfulPost: { nodes: allContentfulNodes },
+        }) => {
+          const contentfulNodeMap = allContentfulNodes.reduce((acc, node) => {
+            const pagePath = `/blog/post/${node.slug}/`
+            acc[pagePath] = node
+
+            return acc
+          }, {})
+
+          return allPages.map(page => ({
+            ...page,
+            ...contentfulNodeMap[page.path],
+          }))
+        },
+        serialize: ({ path: pagePath, updatedAt }) => ({
+          url: pagePath,
+          lastmodISO: updatedAt,
+        }),
       },
     },
   ],

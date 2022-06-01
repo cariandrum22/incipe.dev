@@ -8428,14 +8428,6 @@ type PagesQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 type PagesQueryQuery = { readonly allSiteFunction: { readonly nodes: ReadonlyArray<Pick<SiteFunction, 'functionRoute'>> }, readonly allSitePage: { readonly nodes: ReadonlyArray<Pick<SitePage, 'path'>> } };
 
-type Unnamed_1_QueryVariables = Exact<{ [key: string]: never; }>;
-
-
-type Unnamed_1_Query = { readonly contentfulPage: Maybe<(
-    Pick<ContentfulPage, 'title'>
-    & { readonly body: Maybe<{ readonly childMdx: Maybe<Pick<Mdx, 'body'>> }> }
-  )> };
-
 type SiteMetaDataQueryVariables = Exact<{ [key: string]: never; }>;
 
 

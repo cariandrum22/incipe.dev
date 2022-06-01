@@ -97,7 +97,12 @@ const config: GatsbyConfig = {
       },
     },
     `gatsby-plugin-react-helmet`,
-    `gatsby-plugin-mdx`,
+    {
+      resolve: `gatsby-plugin-mdx`,
+      options: {
+        gatsbyRemarkPlugins: [{ resolve: `gatsby-remark-prismjs` }],
+      },
+    },
     `gatsby-plugin-svgr-svgo`,
     `gatsby-plugin-image`,
     `gatsby-transformer-sharp`,

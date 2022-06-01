@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 
 import "./styles/styles.css"
-
+import "prismjs/themes/prism-twilight.css"
 import React from "react"
 import Layout from "./src/components/Layout"
 

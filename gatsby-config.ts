@@ -1,6 +1,8 @@
 import type { GatsbyConfig } from "gatsby"
 import * as path from "path"
 import * as dotenv from "dotenv"
+import RemarkMath from "remark-math"
+import RehypeKatex from "rehype-katex"
 
 dotenv.config({
   path: `.env.${process.env.NODE_ENV}.local`,
@@ -101,6 +103,8 @@ const config: GatsbyConfig = {
       resolve: `gatsby-plugin-mdx`,
       options: {
         gatsbyRemarkPlugins: [{ resolve: `gatsby-remark-prismjs` }],
+        remarkPlugins: [RemarkMath],
+        rehypePlugins: [RehypeKatex],
       },
     },
     `gatsby-plugin-svgr-svgo`,

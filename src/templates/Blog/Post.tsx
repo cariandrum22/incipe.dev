@@ -108,8 +108,8 @@ const query = graphql`
       authors {
         name
       }
-      updatedAt(formatString: "MMMM Do, YYYY")
-      rawDate: updatedAt
+      publishedOn(formatString: "MMMM Do, YYYY")
+      rawDate: publishedOn
     }
     previous: contentfulPost(slug: { eq: $previousPostSlug }) {
       slug

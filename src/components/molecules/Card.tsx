@@ -61,7 +61,7 @@ const Card: React.FC<Props> = ({ post }) => (
             ))}
           </p>
           <div className="flex space-x-1 text-sm text-gray-500">
-            <Date>{post.updatedAt as string}</Date>
+            <Date>{post.publishedOn}</Date>
             <span aria-hidden="true">&middot;</span>
             <ReadingTime>{post.body?.body as string}</ReadingTime>
           </div>

@@ -390,7 +390,7 @@ type ContentfulAsset = ContentfulReference & Node & RemoteFile & {
   readonly publicUrl: Scalars['String'];
   readonly resize: Maybe<RemoteFileResize>;
   /** Data used in the <GatsbyImage /> component. See https://gatsby.dev/img for more info. */
-  readonly gatsbyImage: Scalars['GatsbyImageData'];
+  readonly gatsbyImage: Maybe<Scalars['GatsbyImageData']>;
 };
 
 
@@ -409,7 +409,7 @@ type ContentfulAsset_gatsbyImageDataArgs = {
   resizingBehavior: Maybe<ImageResizingBehavior>;
   cropFocus: Maybe<ContentfulImageCropFocus>;
   cornerRadius?: Maybe<Scalars['Int']>;
-  quality?: Maybe<Scalars['Int']>;
+  quality: Maybe<Scalars['Int']>;
 };
 
 
@@ -467,7 +467,7 @@ type RemoteFile = {
   readonly publicUrl: Scalars['String'];
   readonly resize: Maybe<RemoteFileResize>;
   /** Data used in the <GatsbyImage /> component. See https://gatsby.dev/img for more info. */
-  readonly gatsbyImage: Scalars['GatsbyImageData'];
+  readonly gatsbyImage: Maybe<Scalars['GatsbyImageData']>;
 };
 
 

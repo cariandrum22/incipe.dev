@@ -5,7 +5,7 @@ import Blog from "../../components/organisms/Blog"
 type Props = {
   data: {
     posts: {
-      nodes: Array<GatsbyTypes.ContentfulPost>
+      nodes: Array<Queries.ContentfulPost>
     }
   }
   pageContext: {

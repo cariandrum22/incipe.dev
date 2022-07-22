@@ -188,6 +188,7 @@ dist
 # Gatsby files
 .cache/
 public
+src/gatsby-types.d.ts
 
 # vuepress build output
 .vuepress/dist

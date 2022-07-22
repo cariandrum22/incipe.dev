@@ -4,11 +4,11 @@ import Card from "../molecules/Card"
 type Props = {
   title: string
   caption: string
-  children: Array<GatsbyTypes.ContentfulPost>
+  children: Array<Queries.ContentfulPost>
 }
 
 const Blog: React.FC<Props> = ({ title, caption, children }) => (
-  <div className="relative px-4 pt-16 pb-20 mx-auto max-w-7xl bg-white sm:px-6 md:justify-between lg:px-8 lg:pt-24 lg:pb-28">
+  <div className="relative mx-auto max-w-7xl bg-white px-4 pt-16 pb-20 sm:px-6 md:justify-between lg:px-8 lg:pt-24 lg:pb-28">
     <div className="absolute inset-0">
       <div className="h-1/3 bg-white sm:h-2/3" />
     </div>
@@ -21,7 +21,7 @@ const Blog: React.FC<Props> = ({ title, caption, children }) => (
           {caption}
         </p>
       </div>
-      <div className="grid gap-5 mx-auto mt-12 max-w-lg lg:grid-cols-3 lg:max-w-none">
+      <div className="mx-auto mt-12 grid max-w-lg gap-5 lg:max-w-none lg:grid-cols-3">
         {children.map(post => (
           <Card post={post} key={post.slug} />
         ))}

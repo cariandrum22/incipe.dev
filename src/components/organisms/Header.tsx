@@ -11,20 +11,20 @@ const navigation: Incipe.Links = [
 ]
 
 type Props = {
-  title: GatsbyTypes.Maybe<string>
+  title: Queries.Maybe<string>
 }
 
 const Header: React.FC<Props> = ({ title }) => (
   <header className="bg-white">
     <nav
-      className="px-4 mx-auto max-w-7xl sm:px-6　md:justify-between lg:px-8"
+      className="mx-auto max-w-7xl px-4 sm:px-6　md:justify-between lg:px-8"
       aria-label="Top"
     >
-      <div className="flex justify-between items-center py-6 w-full border-b border-slate-800 lg:border-none">
+      <div className="flex w-full items-center justify-between border-b border-slate-800 py-6 lg:border-none">
         <div className="flex items-center">
           <Logo text={title || "No title"} href="/" />
           <Links
-            className="hidden ml-20 space-x-8 lg:block"
+            className="ml-20 hidden space-x-8 lg:block"
             links={navigation}
           />
         </div>
@@ -33,7 +33,7 @@ const Header: React.FC<Props> = ({ title }) => (
         */}
       </div>
       <Links
-        className="flex flex-wrap justify-center py-4 space-x-6 lg:hidden"
+        className="flex flex-wrap justify-center space-x-6 py-4 lg:hidden"
         links={navigation}
       />
     </nav>

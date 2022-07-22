@@ -29,7 +29,6 @@
     "gatsby-plugin-sharp": "^4.19.0",
     "gatsby-plugin-sitemap": "^5.19.0",
     "gatsby-plugin-svgr-svgo": "^2.0.0",
-    "gatsby-plugin-typegen": "^2.2.4",
     "gatsby-plugin-typescript": "^4.19.0",
     "gatsby-remark-prismjs": "^6.19.0",
     "gatsby-source-contentful": "^7.17.0",
@@ -93,7 +92,7 @@
     "format:eslint": "eslint --fix \"**/*.{js,jsx,ts,tsx}\"",
     "start": "gatsby develop",
     "serve": "gatsby serve",
-    "clean": "gatsby clean && rm -rf .cache public output src/@types/__generated__",
+    "clean": "gatsby clean && rm -rf .cache public output",
     "test": "echo \"Write tests! -> https://gatsby.dev/unit-testing\" && exit 1"
   },
   "repository": {

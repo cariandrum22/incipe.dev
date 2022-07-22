@@ -6,9 +6,9 @@ import GitHub from "../molecules/SocialNetworkService/GitHub"
 import Twitter from "../molecules/SocialNetworkService/Twitter"
 import Facebook from "../molecules/SocialNetworkService/Facebook"
 
-type Author = GatsbyTypes.Maybe<
+type Author = Queries.Maybe<
   Pick<
-    GatsbyTypes.SiteSiteMetadataAuthor,
+    Queries.SiteSiteMetadataAuthor,
     "name" | "email" | "github" | "twitter" | "facebook"
   >
 >
@@ -21,7 +21,7 @@ const Footer: React.FC<{ author: Author }> = ({ author }) => {
   ]
   return (
     <footer className="bg-white">
-      <div className="py-12 px-4 mx-auto max-w-7xl sm:px-6 md:flex md:justify-between lg:px-8">
+      <div className="mx-auto max-w-7xl py-12 px-4 sm:px-6 md:flex md:justify-between lg:px-8">
         <Links>{SNSLinks}</Links>
         <Copyright license={CCBYSA}>{author?.name}</Copyright>
       </div>

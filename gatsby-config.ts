@@ -21,6 +21,7 @@ const myId = `cariandrum22`
 const googleFontsCSSAPI = `https://fonts.googleapis.com/css2`
 
 const config: GatsbyConfig = {
+  graphqlTypegen: true,
   siteMetadata: {
     title: `incipe.dev`,
     siteUrl: `https://incipe.dev`,
@@ -34,12 +35,6 @@ const config: GatsbyConfig = {
     },
   },
   plugins: [
-    {
-      resolve: `gatsby-plugin-typegen`,
-      options: {
-        outputPath: `src/@types/__generated__/gatsby-types.d.ts`,
-      },
-    },
     {
       resolve: `gatsby-source-contentful`,
       options: {

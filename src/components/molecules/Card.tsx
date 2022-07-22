@@ -4,22 +4,22 @@ import ReadingTime from "../atoms/ReadingTime"
 import Date from "../atoms/Date"
 
 type Props = {
-  post: GatsbyTypes.ContentfulPost
+  post: Queries.ContentfulPost
 }
 
 const Card: React.FC<Props> = ({ post }) => (
   <div
     key={post.title}
-    className="flex overflow-hidden flex-col rounded-lg shadow-lg"
+    className="flex flex-col overflow-hidden rounded-lg shadow-lg"
   >
     <div className="shrink-0">
       <GatsbyImage
-        className="object-cover w-full h-48"
+        className="h-48 w-full object-cover"
         alt=""
         image={post.heroImage?.gatsbyImageData}
       />
     </div>
-    <div className="flex flex-col flex-1 justify-between p-6 bg-white">
+    <div className="flex flex-1 flex-col justify-between bg-white p-6">
       <div className="flex-1">
         {post.tags?.map(tag => (
           <p className="text-sm font-medium text-indigo-600" key={tag}>
@@ -28,20 +28,20 @@ const Card: React.FC<Props> = ({ post }) => (
             </a>
           </p>
         ))}
-        <a href={`/blog/post/${post.slug}`} className="block mt-2">
+        <a href={`/blog/post/${post.slug}`} className="mt-2 block">
           <p className="text-xl font-semibold text-gray-900">{post.title}</p>
           <p className="mt-3 text-base text-gray-500">
             {post.description?.description}
           </p>
         </a>
       </div>
-      <div className="flex items-center mt-6">
+      <div className="mt-6 flex items-center">
         {post.authors?.map(author => (
           <div className="shrink-0" key={author?.name}>
             <a href={`/blog/author/${author?.identity}`}>
               <span className="sr-only">{author?.name}</span>
               <GatsbyImage
-                className="w-10 h-10 rounded-full"
+                className="h-10 w-10 rounded-full"
                 alt=""
                 image={author?.picture?.gatsbyImageData}
               />

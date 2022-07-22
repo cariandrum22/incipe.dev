@@ -10,9 +10,9 @@ import DummyText from "../../constants/Dummy/Text"
 
 type Props = {
   data: {
-    post: GatsbyTypes.ContentfulPost
-    previous: GatsbyTypes.ContentfulPost
-    next: GatsbyTypes.ContentfulPost
+    post: Queries.ContentfulPost
+    previous: Queries.ContentfulPost
+    next: Queries.ContentfulPost
   }
 }
 
@@ -32,10 +32,10 @@ const Post: React.FC<Props> = props => {
   const tags = (post.tags as Array<string>) ?? ["No tags."]
 
   return (
-    <div className="relative py-16 px-4 mx-auto max-w-7xl bg-white sm:px-6 md:justify-between lg:px-8 lg:pt-8 lg:pb-28">
+    <div className="relative mx-auto max-w-7xl bg-white py-16 px-4 sm:px-6 md:justify-between lg:px-8 lg:pt-8 lg:pb-28">
       <SEO title={title} description={description} image={getSrc(image)} />
       <Hero image={image} title={title} content={description} />
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <Tags tags={tags} />
         <div className="text-base font-thin text-slate-700">
           {authors} &middot;&nbsp;
@@ -43,13 +43,13 @@ const Post: React.FC<Props> = props => {
           minute read
         </div>
       </div>
-      <div className="max-w-full prose">
+      <div className="prose max-w-full">
         <div>
           <StyledMDXComponent>{body}</StyledMDXComponent>
         </div>
         {(previous || next) && (
           <nav>
-            <ul className="flow-root py-6 px-0 text-base font-thin list-none text-slate-700">
+            <ul className="flow-root list-none py-6 px-0 text-base font-thin text-slate-700">
               {previous && (
                 <li className="p-0">
                   <Link

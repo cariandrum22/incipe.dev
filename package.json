@@ -21,7 +21,7 @@
     "gatsby-plugin-image": "^2.19.0",
     "gatsby-plugin-mdx": "^3.19.0",
     "gatsby-plugin-postcss": "^5.19.0",
-    "gatsby-plugin-purescript": "github:cariandrum22/gatsby-plugin-purescript#support-webpack5",
+    "gatsby-plugin-purescript": "github:cariandrum22/gatsby-plugin-purescript#support-for-purescript0.15",
     "gatsby-plugin-purgecss": "^6.1.2",
     "gatsby-plugin-react-helmet": "^5.19.0",
     "gatsby-plugin-robots-txt": "^1.7.1",

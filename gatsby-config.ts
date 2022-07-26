@@ -5,7 +5,7 @@ import RemarkMath from "remark-math"
 import RehypeKatex from "rehype-katex"
 
 dotenv.config({
-  path: `.env.${process.env.NODE_ENV}.local`,
+  path: `.env.${process.env["NODE_ENV"]}.local`,
 })
 
 const gatsbyRequiredRules = path.join(
@@ -38,10 +38,10 @@ const config: GatsbyConfig = {
     {
       resolve: `gatsby-source-contentful`,
       options: {
-        spaceId: process.env.CONTENTFUL_SPACE_ID,
-        accessToken: process.env.CONTENTFUL_ACCESS_TOKEN,
+        spaceId: process.env["CONTENTFUL_SPACE_ID"],
+        accessToken: process.env["CONTENTFUL_ACCESS_TOKEN"],
         host:
-          process.env.NODE_ENV === "production"
+          process.env["NODE_ENV"] === "production"
             ? `cdn.contentful.com`
             : `preview.contentful.com`,
       },
@@ -53,7 +53,7 @@ const config: GatsbyConfig = {
         fieldName: `hasura`,
         url: `https://incipe.hasura.app/v1/graphql`,
         headers: {
-          "x-hasura-admin-secret": process.env.HASURA_ADMIN_SECRET,
+          "x-hasura-admin-secret": process.env["HASURA_ADMIN_SECRET"],
         },
       },
     },
@@ -118,11 +118,11 @@ const config: GatsbyConfig = {
     {
       resolve: "gatsby-plugin-google-tagmanager",
       options: {
-        id: process.env.GOOGLE_TAGMANAGER_ID,
+        id: process.env["GOOGLE_TAGMANAGER_ID"],
         includeInDevelopment: false,
         defaultDataLayer: { platform: "gatsby" },
-        gtmAuth: process.env.GOOGLE_TAGMANAGER_AUTH,
-        gtmPreview: process.env.GOOGLE_TAGMANAGER_PREVIEW,
+        gtmAuth: process.env["GOOGLE_TAGMANAGER_AUTH"],
+        gtmPreview: process.env["GOOGLE_TAGMANAGER_PREVIEW"],
         dataLayerName: "dataLayer",
       },
     },
@@ -138,7 +138,7 @@ const config: GatsbyConfig = {
           }
           allContentfulPost {
             nodes {
-              updatedAt
+              publishedOn
               slug
             }
           }
@@ -165,9 +165,9 @@ const config: GatsbyConfig = {
             ...contentfulNodeMap[page.path],
           }))
         },
-        serialize: ({ path: pagePath, updatedAt }) => ({
+        serialize: ({ path: pagePath, publishedOn }) => ({
           url: pagePath,
-          lastmodISO: updatedAt,
+          lastmodISO: publishedOn,
         }),
       },
     },

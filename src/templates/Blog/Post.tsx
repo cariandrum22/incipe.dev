@@ -39,8 +39,8 @@ const Post: React.FC<Props> = props => {
         <Tags tags={tags} />
         <div className="text-base font-thin text-slate-700">
           {authors} &middot;&nbsp;
-          <time dateTime={post.updatedAt}>{post.updatedAt}</time> – {minutes}{" "}
-          minute read
+          <time dateTime={post.publishedOn}>{post.publishedOn}</time> –{" "}
+          {minutes} minute read
         </div>
       </div>
       <div className="prose max-w-full">

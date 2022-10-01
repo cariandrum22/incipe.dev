@@ -4,7 +4,7 @@ import { GatsbyNode } from "gatsby"
 import { resolve } from "path"
 import { forEach, map, flatten, uniq } from "lodash"
 
-type AllContentfulPost = {
+type ListOfPosts = {
   allContentfulPost: {
     nodes: [
       {
@@ -33,10 +33,10 @@ const createPages: GatsbyNode["createPages"] = async ({
   const postTemplate = resolve("./src/templates/Blog/Post.tsx")
   const postsTemplate = resolve("./src/templates/Blog/Posts.tsx")
 
-  const result: { errors?: Array<Error>; data?: AllContentfulPost } =
+  const result: { errors?: Array<Error>; data?: ListOfPosts } =
     await graphql(
       `
-        {
+        query ListOfPosts {
           allContentfulPost {
             nodes {
               title
@@ -61,12 +61,12 @@ const createPages: GatsbyNode["createPages"] = async ({
     return
   }
 
-  const posts = result.data.allContentfulPost.nodes
+  const posts = result.data!.allContentfulPost.nodes
 
   forEach(posts, (post, index) => {
-    const previousPostSlug = index === 0 ? null : posts[index - 1].slug
+    const previousPostSlug = index === 0 ? null : posts[index - 1]?.slug
     const nextPostSlug =
-      index === posts.length - 1 ? null : posts[index + 1].slug
+      index === posts.length - 1 ? null : posts[index + 1]?.slug
 
     createPage({
       path: `/blog/post/${post.slug}/`,

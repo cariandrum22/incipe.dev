@@ -23,7 +23,7 @@ const Posts: React.FC<Props> = ({ data, pageContext }) => (
 const query = graphql`
   query Posts($tag: [String], $authorId: String) {
     posts: allContentfulPost(
-      sort: { fields: publishedOn, order: DESC }
+      sort: { publishedOn: DESC }
       filter: {
         authors: { elemMatch: { identity: { eq: $authorId } } }
         tags: { in: $tag }

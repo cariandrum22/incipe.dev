@@ -13,11 +13,11 @@ const Hero: React.FC<Props> = ({ image, title, content }) => (
       <GatsbyImage
         alt={title}
         image={image}
-        className="object-cover w-full h-96"
+        className="h-96 w-full object-cover"
       />
     )}
     <div className="pt-10">
-      <h1 className="pb-4 text-2xl text-slate-700 border-b border-slate-500">
+      <h1 className="border-b border-slate-500 pb-4 text-2xl text-slate-700">
         {title}
       </h1>
       {content && <p className="py-6 pl-2 text-sm text-slate-600">{content}</p>}

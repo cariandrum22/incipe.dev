@@ -1,5 +1,10 @@
 module.exports = {
-  content: ["./src/**/*.tsx", "./purs/**/*.purs"],
+  content: [
+    "./src/pages/**/*.tsx",
+    "./src/components/**/*.tsx",
+    "./src/templates/**/*.tsx",
+    "./purs/**/*.purs"
+  ],
   theme: {
     extend: {
       fontFamily: {

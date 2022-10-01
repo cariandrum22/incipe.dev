@@ -28,7 +28,7 @@ const Post: React.FC<Props> = props => {
   })()
   const { minutes } = useReadingTime(post.body?.body ?? "No body.")
   const image = post.heroImage?.gatsbyImageData
-  const body = post.body?.childMdx?.body ?? DummyText
+  const body = post.body?.body ?? DummyText
   const tags = (post.tags as Array<string>) ?? ["No tags."]
 
   return (
@@ -45,7 +45,7 @@ const Post: React.FC<Props> = props => {
       </div>
       <div className="prose max-w-full">
         <div>
-          <StyledMDXComponent>{body}</StyledMDXComponent>
+          {StyledMDXComponent(body)}
         </div>
         {(previous || next) && (
           <nav>
@@ -99,9 +99,6 @@ const query = graphql`
         }
       }
       body {
-        childMdx {
-          body
-        }
         body
       }
       tags

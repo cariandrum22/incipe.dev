@@ -13,7 +13,7 @@ const Links: React.FC<Props> = ({ children }) => (
         className="text-slate-400 hover:text-slate-500"
       >
         <span className="sr-only">{l.name}</span>
-        <l.icon className="w-6 h-6" aria-hidden="true" />
+        <l.icon className="h-6 w-6" aria-hidden="true" />
       </a>
     ))}
   </div>

@@ -13,15 +13,17 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         easy-ps = import easy-purescript-nix { inherit pkgs; };
-      in {
+      in
+      {
         devShell = pkgs.mkShell {
           buildInputs = [
-            easy-ps.purs-0_15_2
+            easy-ps.purs-0_15_6
             easy-ps.psc-package
             easy-ps.spago
             easy-ps.purty
             easy-ps.zephyr
             pkgs.nodejs
+            pkgs.nodePackages.node-gyp
             pkgs.dhall-lsp-server
           ];
         };

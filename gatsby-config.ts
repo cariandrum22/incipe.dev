@@ -1,12 +1,15 @@
 import type { GatsbyConfig } from "gatsby"
 import * as path from "path"
 import * as dotenv from "dotenv"
-import RemarkMath from "remark-math"
-import RehypeKatex from "rehype-katex"
 
 dotenv.config({
   path: `.env.${process.env["NODE_ENV"]}.local`,
 })
+
+type SiteMap = {
+  allSitePage: { nodes: object }
+  allContentfulPost: { nodes: object }
+}
 
 const gatsbyRequiredRules = path.join(
   process.cwd(),
@@ -93,15 +96,6 @@ const config: GatsbyConfig = {
         ],
       },
     },
-    `gatsby-plugin-react-helmet`,
-    {
-      resolve: `gatsby-plugin-mdx`,
-      options: {
-        gatsbyRemarkPlugins: [{ resolve: `gatsby-remark-prismjs` }],
-        remarkPlugins: [RemarkMath],
-        rehypePlugins: [RehypeKatex],
-      },
-    },
     `gatsby-plugin-svgr-svgo`,
     `gatsby-plugin-image`,
     `gatsby-transformer-sharp`,
@@ -130,7 +124,7 @@ const config: GatsbyConfig = {
       resolve: "gatsby-plugin-sitemap",
       options: {
         query: `
-        {
+        query SiteMap {
           allSitePage {
             nodes {
               path
@@ -152,7 +146,7 @@ const config: GatsbyConfig = {
         resolvePages: ({
           allSitePage: { nodes: allPages },
           allContentfulPost: { nodes: allContentfulNodes },
-        }) => {
+        }: SiteMap) => {
           const contentfulNodeMap = allContentfulNodes.reduce((acc, node) => {
             const pagePath = `/blog/post/${node.slug}/`
             acc[pagePath] = node

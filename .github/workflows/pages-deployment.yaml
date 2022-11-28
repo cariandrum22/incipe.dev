@@ -26,7 +26,7 @@ jobs:
           GOOGLE_TAGMANAGER_AUTH: ${{ secrets.GOOGLE_TAGMANAGER_AUTH }}
           GOOGLE_TAGMANAGER_PREVIEW: ${{ secrets.GOOGLE_TAGMANAGER_PREVIEW }}
         run: |
-          nix develop -c npm install
+          nix develop -c npm install --legacy-peer-deps
           nix develop -c npm run build
       - name: Publish
         uses: cloudflare/wrangler-action@2.0.0

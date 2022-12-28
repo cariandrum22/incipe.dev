@@ -17,7 +17,7 @@
       {
         devShell = pkgs.mkShell {
           buildInputs = [
-            easy-ps.purs-0_15_6
+            easy-ps.purs-0_15_7
             easy-ps.psc-package
             easy-ps.spago
             easy-ps.purty

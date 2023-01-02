@@ -6,7 +6,7 @@ import Links from "../molecules/Navigation/Links"
 const navigation: Incipe.Links = [
   { name: "Blog", href: "/blog" },
   { name: "About", href: "/about" },
-  // { name: "Profile", href: "/profile" },
+  { name: "Environments", href: "/environments" },
   // { name: "Laboratory", href: "/laboratory" },
 ]
 

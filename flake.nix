@@ -17,12 +17,13 @@
       {
         devShell = pkgs.mkShell {
           buildInputs = [
-            easy-ps.purs-0_15_7
+            easy-ps.purs-0_15_8
             easy-ps.psc-package
             easy-ps.spago
             easy-ps.purty
             easy-ps.zephyr
             pkgs.nodejs
+            pkgs.esbuild
             pkgs.nodePackages.node-gyp
             pkgs.dhall-lsp-server
           ];

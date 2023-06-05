@@ -3,7 +3,7 @@ module.exports = {
     "./src/pages/**/*.tsx",
     "./src/components/**/*.tsx",
     "./src/templates/**/*.tsx",
-    "./purs/**/*.purs"
+    "./purs/**/*.purs",
   ],
   theme: {
     extend: {
@@ -12,5 +12,6 @@ module.exports = {
       },
     },
   },
+  // eslint-disable-next-line global-require
   plugins: [require("@tailwindcss/typography")],
 }

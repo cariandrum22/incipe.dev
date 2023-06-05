@@ -33,25 +33,24 @@ const createPages: GatsbyNode["createPages"] = async ({
   const postTemplate = resolve("./src/templates/Blog/Post.tsx")
   const postsTemplate = resolve("./src/templates/Blog/Posts.tsx")
 
-  const result: { errors?: Array<Error>; data?: ListOfPosts } =
-    await graphql(
-      `
-        query ListOfPosts {
-          allContentfulPost {
-            nodes {
-              title
-              slug
-              tags
-              authors {
-                identity
-                name
-                profile
-              }
+  const result: { errors?: Array<Error>; data?: ListOfPosts } = await graphql(
+    `
+      query ListOfPosts {
+        allContentfulPost {
+          nodes {
+            title
+            slug
+            tags
+            authors {
+              identity
+              name
+              profile
             }
           }
         }
-      `
-    )
+      }
+    `
+  )
 
   if (result.errors) {
     reporter.panicOnBuild(
@@ -61,6 +60,7 @@ const createPages: GatsbyNode["createPages"] = async ({
     return
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const posts = result.data!.allContentfulPost.nodes
 
   forEach(posts, (post, index) => {

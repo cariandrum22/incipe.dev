@@ -17,7 +17,7 @@ type Props = {
 const Header: React.FC<Props> = ({ title }) => (
   <header className="bg-white">
     <nav
-      className="mx-auto max-w-7xl px-4 sm:px-6　md:justify-between lg:px-8"
+      className="sm:px-6　md:justify-between mx-auto max-w-7xl px-4 lg:px-8"
       aria-label="Top"
     >
       <div className="flex w-full items-center justify-between border-b border-slate-800 py-6 lg:border-none">

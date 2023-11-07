@@ -17,7 +17,7 @@
       {
         devShell = pkgs.mkShell {
           buildInputs = [
-            easy-ps.purs-0_15_8
+            easy-ps.purs-0_15_10
             easy-ps.psc-package
             easy-ps.spago
             easy-ps.purty
@@ -25,7 +25,7 @@
             pkgs.nodejs
             pkgs.esbuild
             pkgs.nodePackages.node-gyp
-            pkgs.dhall-lsp-server
+            #pkgs.dhall-lsp-server is Broken
           ];
         };
       });

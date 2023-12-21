@@ -25,7 +25,7 @@
             pkgs.nodejs
             pkgs.esbuild
             pkgs.nodePackages.node-gyp
-            #pkgs.dhall-lsp-server is Broken
+            pkgs.dhall-lsp-server
           ];
         };
       });

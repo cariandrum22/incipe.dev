@@ -71,11 +71,6 @@
     "tailwindcss": "^3.4.0",
     "typescript": "^5.3.3"
   },
-  "overrides": {
-    "engine.io": "^6.2.1",
-    "json5": "^2.2.3",
-    "got": "^11.8.5"
-  },
   "keywords": [
     "gatsby"
   ],

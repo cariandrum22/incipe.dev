@@ -1,7 +1,7 @@
 import React from "react"
 import * as runtime from "react/jsx-runtime"
 import { evaluateSync } from "@mdx-js/mdx"
-import { RunnerOptions } from "@mdx-js/mdx/lib/util/resolve-evaluate-options"
+import { RunOptions } from "@mdx-js/mdx/lib/util/resolve-evaluate-options"
 import remarkGfm from "remark-gfm"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
@@ -41,7 +41,7 @@ const defaultOptions = {
 
 const StyledMDXComponent = (mdx: string, options = defaultOptions) => {
   const { default: Content } = evaluateSync(mdx, {
-    ...(runtime as RunnerOptions),
+    ...(runtime as RunOptions),
     ...options,
   })
   return <Content components={components} />

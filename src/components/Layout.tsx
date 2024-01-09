@@ -13,9 +13,9 @@ const Layout: React.FC<Props> = ({ children }) => {
 
   return (
     <div className="bg-white">
-      <Header title={siteMetadata?.title} />
+      <Header title={siteMetadata?.title || ""} />
       {children}
-      <Footer author={siteMetadata?.author} />
+      {siteMetadata?.author && <Footer author={siteMetadata.author} />}
     </div>
   )
 }

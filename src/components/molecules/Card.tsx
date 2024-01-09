@@ -13,11 +13,13 @@ const Card: React.FC<Props> = ({ post }) => (
     className="flex flex-col overflow-hidden rounded-lg shadow-lg"
   >
     <div className="shrink-0">
-      <GatsbyImage
-        className="h-48 w-full object-cover"
-        alt=""
-        image={post.heroImage?.gatsbyImageData}
-      />
+      {post.heroImage?.gatsbyImageData && (
+        <GatsbyImage
+          className="h-48 w-full object-cover"
+          alt=""
+          image={post.heroImage.gatsbyImageData}
+        />
+      )}
     </div>
     <div className="flex flex-1 flex-col justify-between bg-white p-6">
       <div className="flex-1">
@@ -40,11 +42,13 @@ const Card: React.FC<Props> = ({ post }) => (
           <div className="shrink-0" key={author?.name}>
             <a href={`/blog/author/${author?.identity}`}>
               <span className="sr-only">{author?.name}</span>
-              <GatsbyImage
-                className="h-10 w-10 rounded-full"
-                alt=""
-                image={author?.picture?.gatsbyImageData}
-              />
+              {author?.picture?.gatsbyImageData && (
+                <GatsbyImage
+                  className="h-10 w-10 rounded-full"
+                  alt=""
+                  image={author?.picture?.gatsbyImageData}
+                />
+              )}
             </a>
           </div>
         ))}
@@ -61,7 +65,7 @@ const Card: React.FC<Props> = ({ post }) => (
             ))}
           </p>
           <div className="flex space-x-1 text-sm text-gray-500">
-            <Date>{post.publishedOn}</Date>
+            <Date>{String(post.publishedOn)}</Date>
             <span aria-hidden="true">&middot;</span>
             <ReadingTime>{post.body?.body as string}</ReadingTime>
           </div>

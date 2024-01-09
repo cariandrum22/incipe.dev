@@ -27,20 +27,31 @@ const Post: React.FC<Props> = props => {
     return "John Due"
   })()
   const { minutes } = useReadingTime(post.body?.body ?? "No body.")
-  const image = post.heroImage?.gatsbyImageData
+  let imageSrc
+  if (post.heroImage?.gatsbyImageData) {
+    imageSrc = getSrc(post.heroImage.gatsbyImageData)
+  }
   const body = post.body?.body ?? DummyText
   const tags = (post.tags as Array<string>) ?? ["No tags."]
 
   return (
     <div className="relative mx-auto max-w-7xl bg-white px-4 py-16 sm:px-6 md:justify-between lg:px-8 lg:pb-28 lg:pt-8">
-      <SEO title={title} description={description} image={getSrc(image)} />
-      <Hero image={image} title={title} content={description} />
+      <SEO title={title} description={description} image={imageSrc} />
+      {post.heroImage?.gatsbyImageData && (
+        <Hero
+          image={post.heroImage.gatsbyImageData}
+          title={title}
+          content={description}
+        />
+      )}
       <div className="flex items-center justify-between">
         <Tags tags={tags} />
         <div className="text-base font-thin text-slate-700">
           {authors} &middot;&nbsp;
-          <time dateTime={post.publishedOn}>{post.publishedOn}</time> –{" "}
-          {minutes} minute read
+          {post.publishedOn && (
+            <time dateTime={post.publishedOn}>{post.publishedOn}</time>
+          )}
+          – {minutes} minute read
         </div>
       </div>
       <div className="prose max-w-full">

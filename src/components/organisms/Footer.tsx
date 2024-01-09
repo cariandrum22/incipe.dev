@@ -15,15 +15,15 @@ type Author = Queries.Maybe<
 
 const Footer: React.FC<{ author: Author }> = ({ author }) => {
   const SNSLinks: Incipe.SocialNetworkService.Links = [
-    GitHub(author?.github),
-    Twitter(author?.twitter),
-    Facebook(author?.facebook),
+    GitHub(author?.github || ""),
+    Twitter(author?.twitter || ""),
+    Facebook(author?.facebook || ""),
   ]
   return (
     <footer className="bg-white">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:flex md:justify-between lg:px-8">
         <Links>{SNSLinks}</Links>
-        <Copyright license={CCBYSA}>{author?.name}</Copyright>
+        <Copyright license={CCBYSA}>{author?.name || ""}</Copyright>
       </div>
     </footer>
   )

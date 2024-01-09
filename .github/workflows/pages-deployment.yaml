@@ -29,8 +29,8 @@ jobs:
           nix develop -c npm install --legacy-peer-deps
           nix develop -c npm run build
       - name: Publish
-        uses: cloudflare/wrangler-action@2.0.0
+        uses: cloudflare/wrangler-action@v3
         with:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: pages publish --project-name=incipe-dev public
+          command: pages deploy --project-name=incipe-dev public

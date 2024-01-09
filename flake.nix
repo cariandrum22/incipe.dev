@@ -26,6 +26,12 @@
             pkgs.esbuild
             pkgs.nodePackages.node-gyp
             pkgs.dhall-lsp-server
+            pkgs.autoconf
+            pkgs.automake
+            pkgs.libtool
+            pkgs.pkg-config
+            pkgs.libpng
+            pkgs.nasm
           ];
         };
       });

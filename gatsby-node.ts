@@ -1,8 +1,29 @@
 /* eslint-disable import/prefer-default-export */
 
-import { GatsbyNode } from "gatsby"
+import { GatsbyNode, CreateWebpackConfigArgs } from "gatsby"
 import { resolve } from "path"
 import { forEach, map, flatten, uniq } from "lodash"
+import { NormalModuleReplacementPlugin, ProvidePlugin } from "webpack"
+
+const onCreateWebpackConfig = ({ actions }: CreateWebpackConfigArgs) => {
+  actions.setWebpackConfig({
+    plugins: [
+      new NormalModuleReplacementPlugin(/^node:/, resource => {
+        resource.request = resource.request.replace(/^node:/, "")
+      }),
+      new ProvidePlugin({
+        process: resolve(__dirname, "node_modules", "process/browser"),
+      }),
+    ],
+    resolve: {
+      fallback: {
+        path: resolve(__dirname, "node_modules", "path-browserify"),
+        process: resolve(__dirname, "node_modules", "process/browser"),
+        url: resolve(__dirname, "node_modules", "url/"),
+      },
+    },
+  })
+}
 
 type ListOfPosts = {
   allContentfulPost: {
@@ -16,9 +37,9 @@ type ListOfPosts = {
             identity: string
             name: string
             profile: string
-          }
+          },
         ]
-      }
+      },
     ]
   }
 }
@@ -33,29 +54,27 @@ const createPages: GatsbyNode["createPages"] = async ({
   const postTemplate = resolve("./src/templates/Blog/Post.tsx")
   const postsTemplate = resolve("./src/templates/Blog/Posts.tsx")
 
-  const result: { errors?: Array<Error>; data?: ListOfPosts } = await graphql(
-    `
-      query ListOfPosts {
-        allContentfulPost {
-          nodes {
-            title
-            slug
-            tags
-            authors {
-              identity
-              name
-              profile
-            }
+  const result: { errors?: Array<Error>; data?: ListOfPosts } = await graphql(`
+    query ListOfPosts {
+      allContentfulPost {
+        nodes {
+          title
+          slug
+          tags
+          authors {
+            identity
+            name
+            profile
           }
         }
       }
-    `
-  )
+    }
+  `)
 
   if (result.errors) {
     reporter.panicOnBuild(
       `There was an error loading your Contentful posts`,
-      result.errors
+      result.errors,
     )
     return
   }
@@ -116,4 +135,4 @@ const createPages: GatsbyNode["createPages"] = async ({
   })
 }
 
-export { createPages }
+export { onCreateWebpackConfig, createPages }

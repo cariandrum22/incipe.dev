@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import rehypePrism from "rehype-prism-plus"
+import rehypeSlug from "rehype-slug"
 
 type Props = JSX.IntrinsicAttributes &
   React.ClassAttributes<HTMLParagraphElement> &
@@ -35,7 +36,7 @@ const components = {
 
 const defaultOptions = {
   remarkPlugins: [remarkGfm, remarkMath],
-  rehypePlugins: [rehypeKatex, rehypePrism],
+  rehypePlugins: [rehypeKatex, rehypePrism, rehypeSlug],
 }
 
 const StyledMDXComponent = (mdx: string, options = defaultOptions) => {

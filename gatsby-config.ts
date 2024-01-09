@@ -17,7 +17,7 @@ const gatsbyRequiredRules = path.join(
   "gatsby",
   "dist",
   "utils",
-  "eslint-rules"
+  "eslint-rules",
 )
 
 const myId = `cariandrum22`

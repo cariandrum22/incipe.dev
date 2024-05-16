@@ -1,5 +1,5 @@
 import React from "react"
-import { utcToZonedTime } from "date-fns-tz"
+import { toZonedTime } from "date-fns-tz"
 import { format as formatDate } from "date-fns"
 
 type Props = {
@@ -8,7 +8,7 @@ type Props = {
 }
 
 const Date: React.FC<Props> = ({ format = "LLL d, yyy", children }) => {
-  const dateWithZone = utcToZonedTime(children, "Asia/Tokyo")
+  const dateWithZone = toZonedTime(children, "Asia/Tokyo")
   return (
     <time dateTime={dateWithZone.toLocaleDateString()}>
       {formatDate(dateWithZone, format)}

@@ -1,5 +1,4 @@
 import type { GatsbyConfig } from "gatsby"
-import * as path from "path"
 import * as dotenv from "dotenv"
 
 dotenv.config({
@@ -10,15 +9,6 @@ type SiteMap = {
   allSitePage: { nodes: object }
   allContentfulPost: { nodes: object }
 }
-
-const gatsbyRequiredRules = path.join(
-  process.cwd(),
-  "node_modules",
-  "gatsby",
-  "dist",
-  "utils",
-  "eslint-rules",
-)
 
 const myId = `cariandrum22`
 const googleFontsCSSAPI = `https://fonts.googleapis.com/css2`
@@ -100,15 +90,6 @@ const config: GatsbyConfig = {
     `gatsby-plugin-image`,
     `gatsby-transformer-sharp`,
     `gatsby-plugin-sharp`,
-    {
-      resolve: `gatsby-plugin-eslint`,
-      options: {
-        rulePaths: [gatsbyRequiredRules],
-        extensions: ["js", "jsx", "ts", "tsx"],
-        exclude: ["node_modules", "public", ".cache"],
-        stages: ["develop"],
-      },
-    },
     {
       resolve: "gatsby-plugin-google-tagmanager",
       options: {

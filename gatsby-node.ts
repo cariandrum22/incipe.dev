@@ -1,5 +1,3 @@
-/* eslint-disable import/prefer-default-export */
-
 import { GatsbyNode, CreateWebpackConfigArgs } from "gatsby"
 import { resolve } from "path"
 import { forEach, map, flatten, uniq } from "lodash"

@@ -1,4 +1,6 @@
-module.exports = {
+import typography from "@tailwindcss/typography"
+
+export default {
   content: [
     "./src/pages/**/*.tsx",
     "./src/components/**/*.tsx",
@@ -12,6 +14,5 @@ module.exports = {
       },
     },
   },
-  // eslint-disable-next-line global-require
-  plugins: [require("@tailwindcss/typography")],
+  plugins: [ typography ],
 }

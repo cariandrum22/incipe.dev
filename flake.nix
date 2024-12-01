@@ -1,4 +1,6 @@
 {
+  description = "incipe.dev";
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
@@ -8,8 +10,15 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, easy-purescript-nix }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      easy-purescript-nix,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
         easy-ps = import easy-purescript-nix { inherit pkgs; };
@@ -34,5 +43,6 @@
             pkgs.nasm
           ];
         };
-      });
+      }
+    );
 }

@@ -32,7 +32,7 @@
     "gatsby-source-graphql": "^5.13.1",
     "gatsby-transformer-remark": "^6.13.1",
     "gatsby-transformer-sharp": "^5.13.1",
-    "katex": "^0.16.11",
+    "katex": "^0.16.21",
     "lodash": "^4.17.21",
     "path-browserify": "^1.0.1",
     "prismjs": "^1.29.0",

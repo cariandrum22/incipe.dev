@@ -1,8 +1,9 @@
 import React from "react"
-import { GatsbyImage, IGatsbyImageData } from "gatsby-plugin-image"
+import Image from "../atoms/Image"
+import type { ImageData } from "../atoms/Image"
 
 type Props = {
-  image?: IGatsbyImageData
+  image?: ImageData
   title: string
   content?: string
 }
@@ -10,7 +11,7 @@ type Props = {
 const Hero: React.FC<Props> = ({ image, title, content }) => (
   <div>
     {image && (
-      <GatsbyImage
+      <Image
         alt={title}
         image={image}
         className="h-96 w-full object-cover"

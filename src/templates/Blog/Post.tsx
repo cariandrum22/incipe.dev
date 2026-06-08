@@ -1,6 +1,6 @@
 import React from "react"
 import { graphql, Link } from "gatsby"
-import { getSrc } from "gatsby-plugin-image"
+import { getImageSrc } from "../../components/atoms/Image"
 import useReadingTime from "../../hooks/useReadingTime"
 import SEO from "../../components/SEO"
 import Tags from "../../components/atoms/Tags"
@@ -30,7 +30,7 @@ const Post: React.FC<Props> = props => {
   const { minutes } = useReadingTime(post.body?.body ?? "No body.")
   let imageSrc
   if (post.heroImage?.gatsbyImageData) {
-    imageSrc = getSrc(post.heroImage.gatsbyImageData)
+    imageSrc = getImageSrc(post.heroImage.gatsbyImageData)
   }
   const body = post.body?.body ?? DummyText
   const tags = post.tags ?? ["No tags."]

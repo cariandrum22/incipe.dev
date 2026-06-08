@@ -1,0 +1,258 @@
+---
+title: "OpenTofuを使ってみる"
+slug: "try-using-opentofu"
+description: "HashiCorp, Inc.のIBMによる買収が発表されたため，OpenTofuに移行することを決めた．オフィシャルドキュメントを見れば導入において基本的に困ることはないのだが，インストーラスクリプトを軽く読んだりしたので，そこで得た知見や考えたことなどを記録しておく．"
+publishedOn: "2024-05-13"
+tags: ["opentofu","iac"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"3pEy7XRgp7t3FHsswrOmrP","contentType":"post","updatedAt":"2024-05-19T10:17:16.325Z"}
+---
+
+## 導入
+
+HashiCorp，Inc.が自社製品をオープンソースライセンスからビジネスソースライセンスに変更するという衝撃のアナウンスがされた2023年の8月，衝撃は受けたものの，その選択自体は理解できるものであった．
+
+私自身はオープンソース原理主義者ではないし，利用者としての立場においては特段困ることはないだろうと思えた．
+
+しかし，このライセンス変更は透明性の低下やコミュニティの反発をもたらし，結果として[Linux FoundationによってOpenTofuが設立される](https://www.linuxfoundation.org/press/announcing-opentofu)ことになった．
+
+選択肢が増えることは喜ばしいことであり，それがオープンソースライセンスであるならば尚の事喜ばしい．
+
+とはいえ，私には喫緊，TerraformをOpenTofuに置き換えるモチベーションはなかった．
+
+**IBMによる買収が発表されるまでは．**
+
+HashiCorp, Inc.の決断自体には何も思うところがない．素晴らしい製品を世に送り出してくれた非常に革新的な会社である．
+
+しかしながら，買収したのがIBMなのが非常に好ましくない．
+
+IBMが買ったソフトウェア企業でまともに息をしているのはRedHatくらいしかないのではないだろうか．大体，IBMの製品ポーフォリオに組み込まれる形で消えている．
+
+Terraformが今後どんな形になるにせよ，あまりIBMの直接影響下にあるソフトウェア製品を使いたくはない[^1]ので，急遽OpenTofuに移行するモチベーションが生まれてしまった．
+
+## OpenTofuをインストールしてみる
+
+OpenTofu自体はBSL適用前のTerraformをForkして開発されているので，当然Goで書かれている．
+
+Goといえば，クロスコンパイル可能でシングルバイナリという非常にポータビリティの高い言語なので，何も考えず[GitHubのリリースページ](https://github.com/opentofu/opentofu/release)から自分のCPUアーキテクチャにあった任意のアーカイブでダウンロードすれば良いのだが，**インストーラスクリプトも提供されているので，これを使うのが一番楽**だ．**アーカイブのSHA256のチェックサム検証と，チェックサム自体のGPG/Cosing検証を自動でやってくれる**．
+
+- [Installing OpenTofu](https://opentofu.org/docs/intro/install/)
+
+Linux Foundationのプロジェクトらしく，[sigstore cosign](https://docs.sigstore.dev/signing/quickstart/)が入っていればそれを使ってくれるので，cosingをインストールした上で，トラストアンカーとなるべきOIDC Token Issuerの信頼性が確認できていれば，これが最も安全かつ簡単であろう．
+
+Rekorで署名エントリ自体のチェックもするとより完璧なのだろうが，このインストーラスクリプトではそこまではやっていないようだった．
+
+さて，この記事を書いている時点でインストーラスクリプトを読むと，OIDC Token Issuerは`https://token.actions.githubusercontent.com`となっており，これは[GitHub ActionsのOIDCプロバイダURLであることが確認できている](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#understanding-the-oidc-token)．
+
+早速インストールしてみよう．
+
+```bash
+$ curl --proto '=https' --tlsv1.2 -fsSL https://get.opentofu.org/install-opentofu.sh | bash -s -- --install-method standalone --install-path ~/.local/bin/ --symlink-path -
+OpenTofu Installer
+
+Installing OpenTofu using the standalone installation method...
+Determining latest OpenTofu version...
+Downloading OpenTofu version 1.7.1...
+Performing checksum verification...
+Checksum for tofu_1.7.1_linux_amd64.zip is 6567b49c43edd2e2670896bb6788b582e7a30fa6c9ee9fa07b9e613cfb219874, as expected.
+Performing signature verification...
+Verified OK
+Verification successful.
+Unpacking OpenTofu...
+Archive:  /tmp/tmp.K3EiQjgPJf/tofu_1.7.1_linux_amd64.zip
+  inflating: /tmp/tmp.HIGtr5HgVq/CHANGELOG.md
+  inflating: /tmp/tmp.HIGtr5HgVq/LICENSE
+  inflating: /tmp/tmp.HIGtr5HgVq/README.md
+  inflating: /tmp/tmp.HIGtr5HgVq/tofu
+Moving OpenTofu installation to /home/claude/.local/bin/...
+Checking if OpenTofu is installed correctly...
+OpenTofu v1.7.1
+on linux_amd64
+Installation complete.
+
+```
+
+さて，公式のインストールマニュアルでは，スクリプトをダウンロードして，実行して，最後に削除しているが，私は面倒なのでパイプで渡して実行した．
+
+私はNixOSを使用しているので，以下のオプションを追加している．
+
+- `--install-method standalone`: パッケージを利用せずスタンドアロンバイナリとしてインストールする
+- `--install-path ~/.local/bin/`: デフォルトでは`/opt/opentofu`にインストールされるのだが，私は普段スタンドアロンバイナリを`~/.local/bin`に配備しており，すでにPATHが通っているため，バイナリのインストール先として指定
+- `--symlink-path -`: デフォルトでは`/usr/local/bin`にバイナリのシンボリックリンクを配備する．先のオプションでPATHが通っている場所にバイナリを配備しているので不要のため`-`で無効化した
+
+早速試してみよう．
+
+```bash
+$ tofu -v
+OpenTofu v1.7.1
+on linux_amd6
+
+```
+
+機能しているようだ．
+
+基本的な使い方はterraformと変わらないはずなので，しばらくこれを使ってみることにする．
+
+## Appendix
+
+正直，インストールスクリプトで十分なのだが，仮にこのスクリプトが改ざんされた場合，それに気づけず，署名検証による恩恵が受けられない気がするので，GPGキーのインポートとトラストを実行した上で，手動でのスタンドアロンバイナリインストールも試してみた．
+
+と言っても，結局**現時点で公開されているキーを一旦信用しておく**というだけの手続きなので，キーが変わったときに気づけるくらいの意味しかない．keybase.ioとかにGPG公開鍵をおいてくれると非常によいのだが．閑話休題．
+
+### GPG公開鍵のインポートとトラスト
+
+GPGの鍵情報は個別に公開されていないようなので，インストールスクリプトを読んで必要な情報を確認する．
+
+**GPG Public Key**
+
+- URL: https://get.opentofu.org/opentofu.gpg
+- Fingerprint: E3E6E43D84CB852EADB0051D0C0AF313E5FD9F80
+
+キーのURLが分かったので，インポートする．
+
+```bash
+$ curl -fsLS https://get.opentofu.org/opentofu.gpg | gpg --import
+gpg: key 0C0AF313E5FD9F80: public key "OpenTofu (This key is used to sign opentofu providers) <core@opentofu.org>" imported
+gpg: Total number processed: 1
+gpg:               imported: 1
+```
+
+無事インポートできたら，フィンガープリントを確認しておく．
+
+```bash
+gpg --list-keys OpenTofu                                             nix-shell-env 
+pub   rsa4096 2023-11-15 [SC]
+      E3E6 E43D 84CB 852E ADB0  051D 0C0A F313 E5FD 9F80
+uid           [ unknown] OpenTofu (This key is used to sign opentofu providers) <core@opentofu.org>
+sub   rsa4096 2023-11-15 [E]
+```
+
+フィンガープリントが一致していることが確認できたら，トラストしておく．
+
+```bash
+$ gpg --edit-key OpenTofu                                              nix-shell-env 
+
+pub  rsa4096/0C0AF313E5FD9F80
+     created: 2023-11-15  expires: never       usage: SC  
+     trust: unknown       validity: unknown
+sub  rsa4096/534F621E47855EB6
+     created: 2023-11-15  expires: never       usage: E   
+[ unknown] (1). OpenTofu (This key is used to sign opentofu providers) <core@opentofu.org>
+
+gpg> trust
+pub  rsa4096/0C0AF313E5FD9F80
+     created: 2023-11-15  expires: never       usage: SC  
+     trust: unknown       validity: unknown
+sub  rsa4096/534F621E47855EB6
+     created: 2023-11-15  expires: never       usage: E   
+[ unknown] (1). OpenTofu (This key is used to sign opentofu providers) <core@opentofu.org>
+
+Please decide how far you trust this user to correctly verify other users' keys
+(by looking at passports, checking fingerprints from different sources, etc.)
+
+  1 = I don't know or won't say
+  2 = I do NOT trust
+  3 = I trust marginally
+  4 = I trust fully
+  5 = I trust ultimately
+  m = back to the main menu
+
+Your decision? 2
+
+pub  rsa4096/0C0AF313E5FD9F80
+     created: 2023-11-15  expires: never       usage: SC  
+     trust: never         validity: unknown
+sub  rsa4096/534F621E47855EB6
+     created: 2023-11-15  expires: never       usage: E   
+[ unknown] (1). OpenTofu (This key is used to sign opentofu providers) <core@opentofu.org>
+Please note that the shown key validity is not necessarily correct
+unless you restart the program.
+
+gpg> quit
+```
+
+私はトラストレベルを`marginally`に設定した．
+
+### OpenTofuをインストールする
+
+[GitHubのリリースページ](https://github.com/opentofu/opentofu/release)から最新のファイルダウンロードする．
+
+```bash
+$ curl -LO https://github.com/opentofu/opentofu/releases/download/v1.7.1/tofu_1.7.1_linux_amd64.zip
+$ curl -LO https://github.com/opentofu/opentofu/releases/download/v1.7.1/tofu_1.7.1_linux_amd64.zip.gpgsig
+```
+
+[COSING](https://docs.sigstore.dev/)での署名検証のために`.sig`と`.pem`ファイルも公開されているが，前述の通り私はgpgを使うので`.gpgsig`ファイルを併せてダウンロードする．
+
+また，SHA256SUMもダウンロードしておく．
+
+```bash
+$ curl -LO https://github.com/opentofu/opentofu/releases/download/v1.7.1/tofu_1.7.1_SHA256SUMS
+$ curl -LO https://github.com/opentofu/opentofu/releases/download/v1.7.1/tofu_1.7.1_SHA256SUMS.gpgsig
+```
+
+署名を検証する．
+
+```bash
+$ gpg --verify tofu_1.7.1_SHA256SUMS.gpgsig tofu_1.7.1_SHA256SUMS
+gpg: Signature made Thu 09 May 2024 12:51:39 AM JST
+gpg:                using RSA key E3E6E43D84CB852EADB0051D0C0AF313E5FD9F80
+gpg: checking the trustdb
+gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+gpg: depth: 0  valid:   2  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 2u
+gpg: Good signature from "OpenTofu (This key is used to sign opentofu providers) <core@opentofu.org>" [unknown]
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: E3E6 E43D 84CB 852E ADB0  051D 0C0A F313 E5FD 9F80
+```
+
+`Good signature from "OpenTofu (This key is used to sign opentofu providers) <core@opentofu.org>" [unknown]`が出ていれば問題ないと考えて良いだろう．
+
+WARNINGについては書かれている通りなので気にしても仕方がない．
+
+SHA256ファイルの署名検証ができたら，次にバイナリチェックサムを確認する．
+
+```bash
+$ grep -q "$(sha256sum tofu_1.7.1_linux_amd64.zip | awk 'NR==1 {print $1}')" tofu_1.7.1_SHA256SUMS && echo "OK" || echo "NG"
+OK
+```
+
+問題なさそうだ．
+
+折角なのでアーカイブの署名も検証しておく．
+
+```bash
+$ gpg --verify tofu_1.7.1_linux_amd64.zip.gpgsig tofu_1.7.1_linux_amd64.zip
+gpg: Signature made Thu 09 May 2024 12:51:37 AM JST
+gpg:                using RSA key E3E6E43D84CB852EADB0051D0C0AF313E5FD9F80
+gpg: Good signature from "OpenTofu (This key is used to sign opentofu providers) <core@opentofu.org>" [unknown]
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: E3E6 E43D 84CB 852E ADB0  051D 0C0A F313 E5FD 9F80
+```
+
+よし．
+
+では，アーカイブを展開する．
+
+```bash
+$ unzip tofu_1.7.1_linux_amd64.zip
+Archive:  tofu_1.7.1_linux_amd64.zip
+  inflating: CHANGELOG.md
+  inflating: LICENSE
+  inflating: README.md
+  inflating: tofu
+
+```
+
+見ての通り，バイナリの他にCHANGELOG.mdやLICENSE，README.mdが同梱されている．あとはPATHが通っている任意の場所にtofuバイナリを配備すればよいし，そのまま実行してもよい．
+
+```bash
+ ./tofu -v
+OpenTofu v1.7.1
+on linux_amd64
+
+```
+
+[^1]: IBMのハードウェアは好きであった．サーバはThinkPad, System x, NeXtScaleなどを散々購入したし，日本IBMのハードウェア保守には大変お世話になった．まぁ，今では全てLenovoになってしまったのだが

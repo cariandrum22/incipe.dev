@@ -1,0 +1,286 @@
+---
+title: "PoweShellの開発環境を整える"
+slug: "setting-up-a-powershell-development-environment"
+description: "PowerShellスクリプトを書く機会に出会ったので，Linux上でvscodeを使用してPowerShellの開発環境を整備した．Microsoft謹製のPowerShell Extensionを使うことで，容易に十分な開発環境を整えることが出来るのだが，PowerShellとのインテグレーションや静的コード解析ツールであるPSScriptAnalyzerの使用に関して，いくつかドキュメントを読むだけではわからない問題にぶつかった．実際にはどれも大した問題ではないのだが，調査には少々時間を使ったので記録を残すことにした．"
+publishedOn: "2022-07-30"
+tags: ["powershell","vscode","microsoft"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"3XigenZ3NoQOfHc4GKyYHx","contentType":"post","updatedAt":"2022-08-01T13:44:05.707Z"}
+---
+
+## 導入
+
+残念なことに，Windows 環境で自動化しなければいけないタスクがでてきた．
+
+現在 2022 年，あえて Win32 Console Command を使った bat ファイルを書くという選択肢は無いので，PowerShell を使うことにした．
+
+特定の言語．環境での開発を始める際，処理系の導入は言うまでもないとして，Linter と Formatter の導入は欠かせないだろう．作法をよく知らない~~なんなら覚える気もない~~言語の場合，特に．だ．
+
+PowerShell スクリプトを書く機会など，個人的にはあまりあってほしくないものなのだが，こういうものは忘れた頃にまた書く羽目になり，そのタイミングでまた環境構築について調べたりするものである．
+
+そのような時間の浪費はしたくないので，未来の自分のためにこの記事を残すことにした．
+
+## 前提
+
+この記事は Linux 上で，Visual Studio Code（以下，vscode）を使用して PowerShell スクリプトを書く環境を構築する方法について述べる．
+
+まずは処理系の導入からだが，どの環境についても[公式](https://docs.microsoft.com/ja-jp/powershell/scripting/install/installing-powershell?view=powershell-7.2)に十分な説明があるので，詳細については割愛する．
+
+私は NixOS を使っているが，Nixpkgs に普通に登録があるので，home-manager で導入を行った．
+
+当然ながら，vscode の導入についてもここでは扱わない．
+
+## 開発環境の構築
+
+とりあえず欲しいのは以下の機能群である．
+
+1. Syntax Highright
+2. Auto Complete
+3. Linter
+4. Formatter
+5. Debugger
+6. Functional Test Runner
+
+PowerShell も vscode も Microsoft 謹製なので，当然のように[Microsoft 謹製の Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.PowerShell)がある．これを導入することで，全ての機能が自動的に手に入る．すばらしい．
+
+しかし，この Extension はいくつか直感に反する動きをするので，それについての補足をこの記事の主題とする．
+
+### PowerShell Extension の導入
+
+好きな方法で[これ](https://marketplace.visualstudio.com/items?itemName=ms-vscode.PowerShell)をインストールする．
+
+### 最初の問題: Unable to find PowerShell
+
+意気揚々と vscode を再起動し，PowerShell Script（.ps1 ファイル）を開くと，早速素敵なエラーが出た．
+
+```text
+[ERROR] - Unable to find PowerShell. Do you have PowerShell installed? You can also configure custom PowerShell installations with the 'powershell.powerShellAdditionalExePaths' setting.
+```
+
+**PowerShell が見つからない**ようだ．PowerShell をカスタムインストールしている場合，`powershell.powerShellAdditionalExePaths`を設定できる．と言われている．
+
+おかしい．pwsh への PATH は通っており，PATH が通っていることが確認出来ているターミナルから`code`コマンドで vscode を起動しているはずだ．そう思って，コードを見てみることにした．
+
+PowerShell Extension のリポジトリは[ここ](https://github.com/PowerShell/vscode-powershell)にある．
+
+[session.ts](https://github.com/PowerShell/vscode-powershell/blob/47e3471d30778c09e07e092ebc2a0b202fe5a450/src/session.ts)を見ると，デフォルトの設定では`PowerShellExeFinder`クラスの`getFirstAvailablePowerShellInstallation`メソッド呼び出しによって解決されているようだ．クラスの実態がある[platform.ts](https://github.com/PowerShell/vscode-powershell/blob/47e3471d30778c09e07e092ebc2a0b202fe5a450/src/platform.ts)を見ていくと，どうやらこの Extension は以下のような動作をするように見える．
+
+- プラットフォームを識別し，各プラットフォーム毎の標準実行パスからファイルの実在を確認する
+  - この各プラットフォームで期待される PowerShell の標準実行パスは **定数としてハードコードされている**
+- この標準実行パスでファイルの実在が確認できなった場合，powershell.powerShellAdditionalExePaths に設定されたパスを順次走査する
+  - このパラメータは複数設定できるが，最初にファイルの実在が確認されたパスが有効となる
+
+つまり，**この Extension は環境変数 PATH の解決を行わず，ハードコードされているパス以外に PowerShell のバイナリがある場合，必ず powershell.powerShellAdditionalExePaths を設定**しなければ，PowerShell の起動に失敗する．
+
+私の場合，home-manager で導入したため，当然ながらハードコードされているパスに pwsh のバイナリは存在しない．
+
+原因が分かってしまえば，気持ちよくエラーメッセージの通り powershell.powerShellAdditionalExePaths に設定を追加することが出来る．
+
+設定パラメータはちゃんと[公式ドキュメント](https://docs.microsoft.com/ja-jp/powershell/scripting/dev-cross-plat/vscode/using-vscode?view=powershell-7.2)にも案内がある．ドキュメントの*セッション メニューへの独自の PowerShell のパスの追加*を参照して，`exePath`と`versionName`を設定すれば良い．
+
+exePath は絶対パスを入力する必要がある．前述の通り，この Extension は PowerShell の実行前にファイルの実在を確認するのだが，それに使用されている関数が`fs.lstatSync()`であるためだ．この関数は引数として渡された文字列をそのまま解釈するため，環境変数や vscode の変数は展開されない．
+
+複数環境で Setting Sync を使っている場合など若干もにょるが，標準実行パス -> powershell.powerShellAdditionalExePaths の定義順（powerShellAdditionalExePaths は Object 配列なので順序は保持される）で，最初に発見されたバイナリを使うという実装がわかっていれば十分管理可能だろう．
+
+powershell.powerShellAdditionalExePaths を設定することで，無事 Language Server と PowerShell の連携に成功した．
+
+## 第二の問題: PSScriptAnalyzer
+
+PowerShell 用の静的コード解析ツールを探したのだが，ほぼ Microsoft 謹製の[PSScriptAnalyzer](https://github.com/PowerShell/PSScriptAnalyzer)一択という状況のようだ．
+
+vscode の PowerShell Extension にはこの PSScriptAnalyzer が同梱されているため，追加の手順無しで使うことができる．
+
+以下は，PowerShell Extension が導入されている vscode の Integrated Terminal として開かれた pwsh で，`Get-Module -ListAvailable`を実行した結果である．
+
+```powershell
+PS /path/to/workspace> Get-Module -ListAvailable
+
+    Directory:
+/nix/store/<hash>-powershell-7.2.3/share/powershell/Modules
+
+ModuleType Version    PreRelease Name                                PSEdition ExportedCommands
+---------- -------    ---------- ----                                --------- ----------------
+Manifest   1.2.5                 Microsoft.PowerShell.Archive        Desk      {Compress-Archive, …
+Manifest   7.0.0.0               Microsoft.PowerShell.Host           Core      {Start-Transcript, …
+Manifest   7.0.0.0               Microsoft.PowerShell.Management     Core      {Add-Content, Clear…
+Manifest   7.0.0.0               Microsoft.PowerShell.Security       Core      {Get-Credential, Ge…
+Manifest   7.0.0.0               Microsoft.PowerShell.Utility        Core      {Export-Alias, Get-…
+Script     1.4.7                 PackageManagement                   Desk      {Find-Package, Get-…
+Script     2.2.5                 PowerShellGet                       Desk      {Find-Command, Find…
+Script     2.1.0                 PSReadLine                          Desk      {Get-PSReadLineKeyH…
+Binary     2.0.3                 ThreadJob                           Desk      Start-ThreadJob
+
+    Directory: /home/<user>/.vscode/extensions/ms-vscode.powershell-2022.7.2/modules
+
+ModuleType Version    PreRelease Name                                PSEdition ExportedCommands
+---------- -------    ---------- ----                                --------- ----------------
+Script     1.1.3                 Plaster                             Desk      {Invoke-Plaster, Ne…
+Binary     3.4.7                 PowerShellEditorServices            Core,Desk Start-EditorServices
+Binary     0.2.0                 PowerShellEditorServices.VSCode     Desk      {New-VSCodeHtmlCont…
+Script     2.2.6                 PSReadLine                          Desk      {Get-PSReadLineKeyH…
+Script     1.20.0                PSScriptAnalyzer                    Desk      {Get-ScriptAnalyzer…
+```
+
+Plaster，PowerShellEditorServices，PowerShellEditorServices.VSCode，PSReadLine，PSScriptAnalyzer という 5 つのモジュールが，PowerShell Extension から読み込まれていることがわかる．
+
+PSScriptAnalyzer の検査ルールセットについては[ここ](https://docs.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/rules/readme?view=ps-modules)をに一覧がある．ルール名，重大度，デフォルトで有効か．といった情報が表になっており，ルール名をクリックして開くと説明の他，誤ったコードと正しいコードのサンプルがある．
+
+PSScriptAnalyzer が期待通り動いていることを確認するために，**デフォルトでオンであるとするルールをいくつか試していたところ，vscode 上で検出されない**ものがあった．バンドルされている PSScriptAnalyzer の問題を疑い，Integrated Terminal で`Invoke-ScriptAnalyzer`コマンドを実行すると，ルールセット一覧上で**デフォルトでオンとさｒているものは全て正常に検出できた**．
+
+この差はなんだろうか．
+
+`Invoke-ScriptAnalyzer`は適用するルールについて記載された Profile を引数として渡すことができる．PowerShell Extension のデフォルトでは Workspace にある`PSScriptAnalyzerSettings.psd1`というファイルがこの Profile として渡されるようだ．
+
+このファイルが存在しない場合，PSScriptAnalyzer のデフォルト設定にフォールバックすることを期待したのだが，前述の通り動作としてはそうなっていない．
+
+となると，Extension のどこかにフォールバックのロジックがあるのではないかと考えた．
+
+結論から言うと，Extensions ではなく，Language Server の方でデフォルトの設定を持っていた．具体的には，[このファイル](https://github.com/PowerShell/PowerShellEditorServices/blob/main/src/PowerShellEditorServices/Services/Analysis/AnalysisService.cs)の Internal Class`AnalysisService`に以下のような定義がある．
+
+```csharp
+/// <summary>
+/// Defines the list of Script Analyzer rules to include by default if
+/// no settings file is specified.
+/// </summary>
+private static readonly string[] s_defaultRules = {
+    "PSAvoidAssignmentToAutomaticVariable",
+    "PSUseToExportFieldsInManifest",
+    "PSMisleadingBacktick",
+    "PSAvoidUsingCmdletAliases",
+    "PSUseApprovedVerbs",
+    "PSAvoidUsingPlainTextForPassword",
+    "PSReservedCmdletChar",
+    "PSReservedParams",
+    "PSShouldProcess",
+    "PSMissingModuleManifestField",
+    "PSAvoidDefaultValueSwitchParameter",
+    "PSUseDeclaredVarsMoreThanAssignments",
+    "PSPossibleIncorrectComparisonWithNull",
+    "PSAvoidDefaultValueForMandatoryParameter",
+    "PSPossibleIncorrectUsageOfRedirectionOperator"
+};
+```
+
+ここまでの調査から，以下のことがわかる．
+
+- PSScriptAnalyzer の Rule を設定したければ Profile ファイルを作成し読み込ませる必要がある
+  - PowerShell Extension が使用する PSScriptAnalyzer 用のプロファイルは`powershell.scriptAnalysis.settingsPath`の設定値が使われる
+    - この値のデフォルトは`./PSScriptAnalyzerSettings.psd1`である
+- powershell.scriptAnalysis.settingsPath に Profile が存在しない場合，Language Server にハードコードされたデフォルト値が使われる
+
+Linter の設定は通常プロジェクト毎に設置するものなので，この作り自体に強い違和感があるわけではないのだが，この挙動が記載されたドキュメントは発見できず，コードを読むしかなかった．
+
+なお，検索エンジンで雑にこの辺の挙動を調べていたとき，コマンドパレットから`PowerShell: Select PSScriptAnalyzer Rules`を呼び出すことで，適用されるルールを vscode 上から選択できるといった記事を見たのだが，このコマンドは[2019 年にはすでに壊れていた](https://github.com/PowerShell/vscode-powershell/issues/2422)ようで，[2020 年には廃止されている](https://github.com/PowerShell/vscode-powershell/pull/2659)．
+
+おとなしく Workspace に PSScriptAnalyzerSettings.psd1 を置こう．
+
+この，PSScriptAnalyzerSettings.psd1 だが，PowerShell Extension に同梱されている Plaster を使ってファイルを生成することが出来る．
+
+## Plaster
+
+Plaster は PowerShell で書かれたテンプレートベースのスキャファルディングツールで，標準で 2 つのテンプレートが同梱されている．
+
+- AddPSScriptAnalyzerSettings
+- New PowerShell Manifest Module
+
+*AddPSScriptAnalyzerSettings*はその名の通り，PSScriptAnalyzer のプロファイルを生成する．ここで生成されるファイルの中身はコメントアウトされているため，このファイルを読み込ませると実質 PSScriptAnalyzer のデフォルトの挙動をする．
+
+Plaster は`Invoke-Plaster`コマンドか，vscode のコマンドパレット（Ctrl+Shift+P）から`PowerShell: Create New Project from Plaster Template`を呼び出すことで実行できる．
+
+コマンドパレットから該当のコマンドを呼び出すとテンプレートの選択を求められるので，AddPSScriptAnalyzerSettings を選択する．すると，プロジェクトを作成するフォルダの**絶対パス**を要求される．ここで相対パスを指定してもファイル自体は相対パスで作成されるのだが，Plasterによるファイルの展開後，入力された文字列を**絶対パスしてvscodeで開く**という動きをするので，おとなしく絶対パスを入力する．
+
+実際に実行すると，Integrated Terminalに以下のような表示がでる．
+
+```powershell
+PS /path/to/workspace>
+  ____  _           _
+ |  _ \| | __ _ ___| |_ ___ _ __
+ | |_) | |/ _` / __| __/ _ \ '__|
+ |  __/| | (_| \__ \ ||  __/ |
+ |_|   |_|\__,_|___/\__\___|_|
+                                            v1.1.3
+==================================================
+Enter the name of the Script Analyzer settings file (PSScriptAnalyzerSettings.psd1):
+Select an editor for editor integration (or None):
+[N] None  [C] Visual Studio Code  [?] Help (default is "N"): C
+Destination path: /path/to/workspace
+   Create PSScriptAnalyzerSettings.psd1
+
+PSScriptAnalyzerSettings.psd1 has been added to the folder '/path/to/workspace'.
+Edit this file to configure your PSScriptAnalyzer settings.
+```
+
+*Enter the name of the Script Analyzer settings file*はデフォルトで PSScriptAnalyzerSettings.psd1 となっているので，何も入力しない．
+
+*Select an editor for editor integration*は*N*でも*C*良いが，C を選択すると，PSScriptAnalyzerSettings.psd1 の生成だけではなく，*.vscode/settings.json*に以下の設定が追加される．
+
+```json
+"powershell.scriptAnalysis.settingsPath": "PSScriptAnalyzerSettings.psd1",
+```
+
+これを書いている 2022 年 7 月現在，PSScriptAnalyzer の Profile の変更を Language Server である*PowerShellEditorServices*が検知する仕組みは実装されておらず，また Reload コマンドも実装されていないようなので，Profile の設置や変更をした場合，Window ごとリロードする必要がある．
+
+### Pester
+
+Test Runner は PowerShell Extension に含まれているが，テストの実行には Pester というテストとモックのためのフレームワークを使用する．
+
+Pester は Microsoft 謹製でないためか，PowerShell Extension には含まれていないため，自分で追加する必要がある．
+
+このモジュールは*PowerShell Gallery*に登録されているので，`Install-Module`コマンドで簡単に導入できる．
+
+```powershell
+PS /path/to/workspace> Install-Module -Name Pester
+
+Untrusted repository
+You are installing the modules from an untrusted repository. If you trust this repository, change its InstallationPolicy value by running the Set-PSRepository cmdlet. Are you sure you want to install the modules from 'PSGallery'?
+[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "N"): Y
+```
+
+インストールされたことをを確認してみよう．
+
+```powershell
+PS /path/to/workspace> Get-Module -ListAvailable
+
+    Directory: /home/<user>/.local/share/powershell/Modules
+
+ModuleType Version    PreRelease Name                                PSEdition ExportedCommands
+---------- -------    ---------- ----                                --------- ----------------
+Script     5.3.3                 Pester                              Desk      {Invoke-Pester, Describe, Context, It…}
+
+    Directory: /nix/store/<hash>-powershell-7.2.3/share/powershell/Modules
+
+ModuleType Version    PreRelease Name                                PSEdition ExportedCommands
+---------- -------    ---------- ----                                --------- ----------------
+Manifest   1.2.5                 Microsoft.PowerShell.Archive        Desk      {Compress-Archive, Expand-Archive}
+Manifest   7.0.0.0               Microsoft.PowerShell.Host           Core      {Start-Transcript, Stop-Transcript}
+Manifest   7.0.0.0               Microsoft.PowerShell.Management     Core      {Add-Content, Clear-Content, Clear-ItemProperty, Join-Path…}
+Manifest   7.0.0.0               Microsoft.PowerShell.Security       Core      {Get-Credential, Get-ExecutionPolicy, Set-ExecutionPolicy, ConvertFrom-SecureString…}
+Manifest   7.0.0.0               Microsoft.PowerShell.Utility        Core      {Export-Alias, Get-Alias, Import-Alias, New-Alias…}
+Script     1.4.7                 PackageManagement                   Desk      {Find-Package, Get-Package, Get-PackageProvider, Get-PackageSource…}
+Script     2.2.5                 PowerShellGet                       Desk      {Find-Command, Find-DSCResource, Find-Module, Find-RoleCapability…}
+Script     2.1.0                 PSReadLine                          Desk      {Get-PSReadLineKeyHandler, Set-PSReadLineKeyHandler, Remove-PSReadLineKeyHandler, Get-PSReadLineOption…}
+Binary     2.0.3                 ThreadJob                           Desk      Start-ThreadJob
+
+    Directory: /home/<user>/.vscode/extensions/ms-vscode.powershell-2022.7.2/modules
+
+ModuleType Version    PreRelease Name                                PSEdition ExportedCommands
+---------- -------    ---------- ----                                --------- ----------------
+Script     1.1.3                 Plaster                             Desk      {Invoke-Plaster, New-PlasterManifest, Get-PlasterTemplate, Test-PlasterManifest}
+Binary     3.4.7                 PowerShellEditorServices            Core,Desk Start-EditorServices
+Binary     0.2.0                 PowerShellEditorServices.VSCode     Desk      {New-VSCodeHtmlContentView, Show-VSCodeHtmlContentView, Close-VSCodeHtmlContentView, Set-VSCodeHtmlContentView…}
+Script     2.2.6                 PSReadLine                          Desk      {Get-PSReadLineKeyHandler, Set-PSReadLineKeyHandler, Remove-PSReadLineKeyHandler, Get-PSReadLineOption…}
+Script     1.20.0                PSScriptAnalyzer                    Desk      {Get-ScriptAnalyzerRule, Invoke-ScriptAnalyzer, Invoke-Formatter}
+```
+
+無事導入できたようだ．
+
+インストールができれば，あとは[README](https://github.com/pester/Pester)の通りに動いたので，特に困ることはなかった．
+
+### Debugger
+
+[公式ドキュメント](https://docs.microsoft.com/ja-jp/powershell/scripting/dev-cross-plat/vscode/using-vscode)の*Visual Studio Code を使用したデバッグ*セクションの通りである．こちらも特に困ることはなかった．
+
+## 最後に
+
+PowerShellを本気で書く機会はなど個人的に少ないほうがいいのだが，やはり困ったときにソースを直接参照できるオープンソースソフトウェアは最高であるし，昨今のMicrosoftのオープンソースに関する取り組みには称賛を送りたい．

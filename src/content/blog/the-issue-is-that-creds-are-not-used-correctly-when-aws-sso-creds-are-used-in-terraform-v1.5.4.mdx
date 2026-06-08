@@ -1,0 +1,55 @@
+---
+title: "terraform v1.5.4でAWS SSOの資格情報を使用している場合に資格情報が正しく使用されない問題"
+slug: "the-issue-is-that-creds-are-not-used-correctly-when-aws-sso-creds-are-used-in-terraform-v1.5.4"
+description: "aws ssoで取得した資格情報を使ってterraform planを実行したところError: error configuring S3 Backend: no valid credential sources for S3 Backend found.というエラーが出た．\nこの問題はGitHub上でIssueとしてあがっており，すでにPull Requeslも出ていることから近いうちに解消されると思われる．ひとまず短期的にはIssueに記載されている~/.aws/configファイルを修正するワークアラウンドで対処することにした．"
+publishedOn: "2023-08-06"
+tags: ["terrarofm"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"7z50s91Ne6iDACz6gNhVqP","contentType":"post","updatedAt":"2023-08-14T15:22:32.083Z"}
+---
+
+## TR;DR
+
+- terraform v1.5.4でAWS SSOの資格情報を使おうとすると，terraformaが依存しているaws-sdk-goのバージョンが古いので，資格情報が正しく処理されない
+- terraformでのaws-skd-goのバージョンアップはすでに[Pull Request](https://github.com/hashicorp/terraform/pull/33607)が出ているので，待っていれば解決しそうである
+- [ワークアラウンド](https://github.com/hashicorp/terraform/issues/32448#issuecomment-1505575049)として`~/.aws/config`を修正する方法がある
+  - `~/.aws/config`を開き以下をコメントアウト
+    - Key`sso_session`
+    - Section `[sso-session '<session-name>']`
+
+## Error: error configuring S3 Backend: no valid credential sources for S3 Backend found.
+
+システムの構成をいくつか変更する必要があり，久しぶりにterraformを使おうと思ったのだが，ローカルにあったバイナリがv1.4系だったので，最新のv1.5.4に上げた．
+
+ひとまず現状確認のために，`terraform plan`を実行してみるとエラーが出た．
+
+```shell
+$ terraform plan
+╷
+│ Error: error configuring S3 Backend: no valid credential sources for S3 Backend found.
+│
+│ Please see https://www.terraform.io/docs/language/settings/backends/s3.html
+│ for more information about providing credentials.
+│
+│ Error: SSOProviderInvalidToken: the SSO session has expired or is invalid
+│
+│
+│
+╵
+```
+
+さて，今回terraformを実行したリポジトリでは，State管理にS3 Backendを使用している．そのため，最初にS3から最新のStateを取得するのだが，S3にアクセスできていないようだ．
+
+terraform planの実行前に同一のプロファイルを使用し`aws s3 ls`を実行しており，こちらではterraform S3 Backendに使用しているBucketも見えている．つまり，有効な資格情報は取得できているはずだ．
+
+検索してみると，今年の1月から[Issue](https://github.com/hashicorp/terraform/issues/32448)に上がっている問題のようだ．
+
+Issueを読んでみると以下のようなことがわかる．
+
+- awsの仕様が変更されたことでaws-cliについてもバージョンによっては同じような問題が起きていたらしい
+- terraformが依存しているaws-sdk-goが古いため，新しいaws-cliで取得した資格情報が適切に処理できていない
+
+修正の[PR](https://github.com/hashicorp/terraform/pull/33607)もすでに出ているので，そう遠くないうちに解決されることだろう．
+
+ひとまずは[ここ](https://github.com/hashicorp/terraform/issues/32448#issuecomment-1505575049)で説明されているワークアラウンドで対処することにした．

@@ -40,6 +40,21 @@ export default [
     },
   },
   {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+    },
+  },
+  {
     files: ["./src/@types/**/*.d.ts"],
     rules: {
       "@typescript-eslint/no-shadow": ["off"],
@@ -52,11 +67,6 @@ export default [
     },
   },
   {
-    ignores: [
-      ".cache/",
-      ".spago/",
-      "public/",
-      "output/"
-    ],
+    ignores: [".cache/", ".spago/", "public/", "output/"],
   },
 ]

@@ -1,0 +1,80 @@
+---
+title: "PIV Smart Card上の鍵を使用してリモートホストのgit commitに署名をする"
+slug: "sign-git-commit-on-a-remote-host-using-the-key-on-a-piv-smart-card"
+description: "Local Machineに接続されたPIV Smart Cardの署名鍵を利用して，Remote Machine上でのgit commit時に署名する方法を調べた．手がかり自体は検索で発見することができたし，手順自体はGPGのドキュメント通りに設定すれば問題なく動作した．"
+publishedOn: "2022-08-07"
+tags: ["gpg","yubikey"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"nP0ZtA1lHH1AUP9Byvd7I","contentType":"post","updatedAt":"2022-08-07T17:00:33.479Z"}
+---
+
+## 導入
+
+諸事情により1週間ほど自宅を離れなければならなくなった．
+
+普段の仕事や趣味の開発も，基本的にはLinux（NixOS）がインストールされたHomebuild Computer（以下，Linux機）を使っており，特定のソフトウェア（e.g. Apple, Adobe, Microsoft製品等）を必要とするときや，仕事部屋以外で作業をするときはMacBook Pro（以下，mac）を使用している．
+
+さて，私は電子署名にGPGを使用しているのだが，**署名用のキーはYubiKey 5 NFCに保存してある**．基本的にYubiKeyはLinux機に挿しっぱなしなので，一度PINを入力してgpg-agentに記憶させてしまえば，**macからsshしている間もLinux上で署名に困ることはない**．このYubiKeyは絶対になくさないように（一応，予備のYubiKeyも構成済みだが）物理キーチェーンに繋げてあるのだが，流石に今回は家を空けるので，Linux機から外さざるおえなくなった．なにせ，物理ーキーチェーンには当然ながら自宅の鍵も繋げてあるからだ．
+
+Linux機からYubiKeyを抜いてしまうと，Linux機上でgit commitをする際署名ができなくて困る．
+
+まぁ，**どうせAgentのForwardなりを設定すれば，ローカルに接続されたスマートカードの鍵を使って，リモートサーバでも署名できるだろう**．と考えていたし，最悪リモートで行った変更をscpなりrsyncなりでローカルに持ってきて署名すればいいや．と雑に考えていたので，不在にする自宅のLinux機にYubiKeyを置いてくることは考えなかった．
+
+果たして，**Agent Forwardでうまくいった**．
+
+## 得られた知見
+
+SSHを使用したGPGのAgent Forwardを使って，以下の要求を満たせた．というだけの話である．
+
+- LinuxをRemote Machineとする
+- macOSをLocal Machineとする
+- Remote MachineにSSH接続している際，Local Machineに接続されたPIV Smart Cardの鍵を使用してRemote Servreでgit commit時に署名する
+
+できないわけないと思っていたが，今までやっていなかった．
+
+それっぽい検索をすると，秒で[答え](https://security.stackexchange.com/questions/255963/sharing-yubikey-via-ssh)が出た．
+
+StackExchangeは偉大である．
+
+## 手順
+
+前述のStackExchangeの回答にある通り，[GPGのAgent Forwardgingのページ](https://wiki.gnupg.org/AgentForwarding)の通りにやればよい．
+
+なお，私のgpgバージョンは以下の通りなので，gpgの設定に`extra-socket`を追加する必要はなかった．
+
+Local Machine(mac):
+
+```text
+gpg (GnuPG) 2.3.7
+libgcrypt 1.10.1
+```
+
+Remote Machine(Linux):
+
+```text
+gpg (GnuPG) 2.3.6
+libgcrypt 1.10.1
+```
+
+## トラブルシューティング
+
+### Local MachineのSocketでConnection refused
+
+以下のようなエラーが出た．
+
+```text
+connect to /Users/<user>/.gnupg/S.gpg-agent.extra port -2
+gpg-agent.extra port -2 failed: Connection refused
+```
+
+該当のファイルは存在しており，設定上も問題なさそうに見える．
+
+そもそも，今回gpg-agent側の設定は特におじっておらず，クライアント側で追加したのはsshの設定だけである．
+
+検索してもこれといった手がかりは得られなかったのだが，Local Machine側のSocketにつながらないというのであれば，それを持っている**gpg-agentがおかしいのではないか？**と考え，再起動したらあっさり解決した．
+
+```shell
+gpgconf --kill gpg-agent
+gpg-agent --daemon
+```

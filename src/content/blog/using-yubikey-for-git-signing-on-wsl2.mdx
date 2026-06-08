@@ -1,0 +1,211 @@
+---
+title: "WSL2上でgitの署名にYubiKeyを使う"
+slug: "using-yubikey-for-git-signing-on-wsl2"
+description: "私はGPGを使用してGitのcommitに署名をしている．署名に使用する鍵はYubiKeyに格納してあるので，GPGがUSB Smart Cardを利用できる環境である必要がある．LinuxやmacOS，Windows上では直接的に困ることはないのだが，WSL2上でUSB Smart Cardを認識させるにはhackが必要であった．一度設定してしまえばしばらく必要がなくなるものだが，再びこれを構成する必要が出たときには確実に忘れている自信があるため，備忘として記事に残すことにした．"
+publishedOn: "2023-04-10"
+tags: ["windows","wsl2","git","gpg"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"5bKp79BOlgFM3aQStV2ZX1","contentType":"post","updatedAt":"2024-05-20T01:28:01.687Z"}
+---
+
+## 導入
+
+私は普段署名にYubikeyに格納した秘密鍵を使用している．
+
+Windows用のちょっとしたパッケージを作るために，WSL2上で作業を行っていたのだが， `git commit` を実行したタイミングで，署名キーが存在しないというエラーが発生した．
+
+それもそのはずで，WSL2は標準でUSBデバイスをサポートしておらず，さらにgpg-agentの設定も特段してはいないからである．
+
+WSL2上でUSB Smart Cardを使用した署名をするためにはどのように構成すればよいのかを調査したところ，基本的に2つの方法があるようだ．
+
+1. [WSL2でUSBデバイスを使用できるように構成する](https://learn.microsoft.com/ja-jp/windows/wsl/connect-usb)
+2. gpg-agentとsocatを使用しWindowsホストとWSL上のgpg-agentを接続する
+
+正直，どちらもかなりHackyなのだが，USBデバイスのbinding管理をしたくないので，2.の方法を選択することにした．
+
+ここでは，WSL2上で動作するArch Linux上で，Yubikeyに格納された秘密鍵を使用した署名を行うまでの手順を備忘のために残す．
+
+なお，この手順は大いに以下の記事を参考にした．
+
+https://justyn.io/blog/using-a-yubikey-for-gpg-in-wsl-windows-subsystem-for-linux-on-windows-10/
+
+## 前提
+
+- GPGの秘密鍵はYubikeyに格納している
+- 公開鍵はKeybaseで公開しており，YubikeyのURL of Public keyにURLが設定されている
+
+## 使用するソフトウェア
+
+### Windows
+
+- Gpg4win
+- WSL-Relay
+
+### Linux
+
+- GnuPG
+- socat
+
+## セットアップ
+
+### Windows
+
+#### Gpg4winのインストール
+
+[Chocolatey](https://chocolatey.org/)で導入する．
+
+```powershell
+PS > choco install gpg4win
+```
+
+インストールしたらgpg-agentを起動しておく．
+
+```powershell
+PS > gpg-connect-agent.exe /bye
+```
+
+### Linux
+
+#### WSL-Relayのインストール
+
+Windowsでは当然ながらUnixソケットはサポートされておらず，Gpg4winのgpg-agentが待ち受けるソケットファイルに直接アクセスすることができない．
+
+この問題のワークアラウンドとして，WSLからWindowsの名前付きパイプにアクセスできるようにするツールとして[jstarks/npiperelay](https://github.com/jstarks/npiperelay)を使用することができる．
+
+しかし，これはGPGが使用しているLibAssuanファイルソケットを[サポートしていない](https://github.com/jstarks/npiperelay/issues/1)らしい．
+
+[NZSmartie](https://github.com/NZSmartie)によるLibAssuanサポートを追加した[fork](https://github.com/NZSmartie/npiperelay)が存在するが，2018年を最後にArchiveされているので，同じくjstarks/npiperelayのforkで，1年以内にActivityのある[WSL-Relay](https://github.com/Lexicality/wsl-relay)を使うことにした
+
+Goはクロスコンパイルできるので，WSL2上のLinuxで作業する．
+基本的にReadmeに書かれているままでよい．
+
+```shell
+$ git clone https://github.com/Lexicality/wsl-relay
+$ cd wsl-relay
+$ GOOS=windows go build -o /mnt/c/Users/<user>/go/bin/wsl-relay.exe
+```
+
+#### GnuPGとsocatのインストール
+
+私はWSL2上で主にArch Linuxを使用しているので，pacmanを使用する．
+
+```shell
+$ sudo pacman -S gnupg socat
+```
+
+#### 接続試験
+
+socatでつなげてみる．
+
+```bash
+$ socat UNIX-LISTEN:/home/<user>/.gnupg/S.gpg-agent,fork, EXEC:'\"/mnt/c/Users/<user>/Go/bin/wsl-relay.exe\" --input-closes --pipe-closes --gpg',nofork
+```
+
+別のシェルから`card-status` を取得してみる．
+
+```bash
+$ gpg --card-status
+```
+
+無事Yubikeyの情報がWSL上から見えていれば成功だ．
+
+実は私はここで一度躓いた．
+
+Windowsはユーザアカウント作成の際，ユーザ名の入力欄に `Who's going to use this PC?` などと書いてあるので，何も考えずフルネームをスペース付きで入力したらそれがそのままアカウント名となってしまった．結果，スペースを含むホームディレクトリパスという巨大な十字架を背負ってしまったのだ．
+
+結果，socatへの引数は空白をデリミタとして認識し，wsl-relay.exeのパスが正しく渡らなかった．
+
+修正の方法はなんてことはなく，WSL-Relayまでのパスを単にエスケープしたクォーテーションマークで囲めばよいだけである．上記スニペットはそのようにしてある．
+
+#### socatとgpg-agentの自動起動
+
+導入でも参考としてあげた，以下の記事のやり方が好みにあったので採用した．
+
+https://justyn.io/blog/using-a-yubikey-for-gpg-in-wsl-windows-subsystem-for-linux-on-windows-10/
+
+具体的には，Windows側でGPG Agentを起動するために，`%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`に`"C:\Program Files (x86)\GnuPG\bin\gpg-connect-agent.exe" /bye`へのショートカットを登録する．
+そのままだとプロンプトが画面に表示されてうざいので，右クリックのコンテキストメニューからプロパティを選択し，最小化して実行するように構成する．
+
+これで，Windows起動時にWindows側でgpg-agentが起動するようになった．
+
+次はLinux側である．
+
+元の記事では，pidファイルの作成およびチェックと，socatをバックグラウンド実行しsocatをwaitするスクリプトを作成して，それをログインシェルの初期化時に呼び出すという方式をとっていた．
+
+私はfishを使っており，自前のユーティリティ関数をfihser経由で配備できるようにGitHubで公開しているので，そのパッケージに関数をはやし，それをconfig.fishで呼ぶことにした．
+
+関数はここにある．
+
+/blob/main/functions/thunnus.gpg.agent_relay.fish
+
+config.fishではWSL環境でだけ上記の関数を呼び出すよう，以下のようなスニペットを追加した．
+
+```text
+if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]
+    thunnus.gpg.agent_relay >/dev/null
+end
+```
+
+これで，再起動しても自動的にgpg-agent-relayを成立させるプログラムが自動起動するようになった．
+
+## 蛇足
+
+WSL上の`gpg --card-status`でYubiKeyが認識されるようになったので，セットアップをしていく．
+
+### 公開鍵の取得
+
+私は公開鍵をKeybaseで公開しており，YubiKeyには公開鍵のURLとしてkeybaseのURLを登録してあるため，edit-cardからfetchするだけである．
+
+```bash
+$ gpg --edit-card
+
+Reader ...........: Yubico YubiKey OTP FIDO CCID 0
+Application ID ...: <masked>
+Application type .: OpenPGP
+Version ..........: 0.0
+Manufacturer .....: Yubico
+Serial number ....: <masked>
+Name of cardholder: Takafumi Asano
+Language prefs ...: [not set]
+Salutation .......:
+URL of public key : https://keybase.io/cariandrum22/pgp_keys.asc
+~
+
+gpg/card> fetch
+gpg: requesting key from 'https://keybase.io/cariandrum22/pgp_keys.asc'
+~
+
+gpg/card> quit
+```
+
+### 公開鍵（の所有者）の信用
+
+間違いなく自分の鍵であることが確認できたら，trustを与えておく．
+
+```bash
+$ gpg --edit-key <key-id>
+~
+
+gpg> trust
+~
+
+Please decide how far you trust this user to correctly verify other users' keys
+(by looking at passports, checking fingerprints from different sources, etc.)
+
+  1 = I don't know or won't say
+  2 = I do NOT trust
+  3 = I trust marginally
+  4 = I trust fully
+  5 = I trust ultimately
+  m = back to the main menu
+
+Your decision? 5
+Do you really want to set this key to ultimate trust? (y/N) y
+
+~
+
+gpg> quit
+```
+
+これで自分の鍵を使った署名と検証ができるようになった．

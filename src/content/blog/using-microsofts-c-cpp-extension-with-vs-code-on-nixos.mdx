@@ -1,0 +1,124 @@
+---
+title: "NixOS上のVS CodeでMicrosoftのC/C++ Extensionを使用する"
+slug: "using-microsofts-c-cpp-extension-with-vs-code-on-nixos"
+description: "VS CodeにはMicrosoft謹製のC/C++ Extensionがある．このExtensionにはバイナリが含まれているため，NixOSではそのまま使用することができず，cpptools client: couldn't create connection to serverというエラーが出る．これはNixOSの構成に起因するもので，通常であればpatchelfを使用して実行時リンカー（ELFインタープリター）を置き換えるなどの対応が必要なのだが，幸いnixpkgsに当該Extensionが登録されているため，自分で修正することなくこれを使うことができる．この記事では，home-managerを使用してこれを導入した．"
+publishedOn: "2022-12-26"
+tags: ["vscode","microsoft","nixos"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"oiDuUOifpiwQLZarPFOFj","contentType":"post","updatedAt":"2022-12-28T12:24:33.359Z"}
+---
+
+## 導入
+私は，これまでC/C++を読み書きする際，簡単なものであればemacs，込み入ったものであれば[JetBrains](https://www.jetbrains.com/)の[CLion](https://www.jetbrains.com/clion/)を使ってきた．
+
+どちらも十分に便利なのだが，最近ではemacsよりVS Codeを使用していることのほうが多く，いくつかC++で実装されているOSS製品の実装を把握する必要がありそうなので，VS CodeにもC/C++の環境を整えることにした．
+
+VS CodeでC++のExtensionを探そうとしたところ，RECOMENDEDに[Microsoft謹製のExtension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)があったので，何も考えずにこれをインストールした．
+
+さて，使っていこう．と.ccをファイルを開いた所，以下のようなエラーが出たのである．
+
+![cpptools client: couldn't create connection to server.](//images.ctfassets.net/krl0y7jst2eo/2MKAzgqG1zasTX8V7JxlJd/636f1f9922d67cb22569471702413dd4/ms-vscode.cpptools-error.png)
+
+## cpptools client: couldn't create connection to server.
+
+さて，表示のとおり，Language Serverに接続が出来ていないようだ．VS CodeのOUTPUTには以下のようなログがある．
+
+```
+[Error - 12:12:04 AM] cpptools client: couldn't create connection to server.
+Launching server using command /home/<user>/.vscode/extensions/ms-vscode.cpptools-1.13.8-linux-x64/bin/cpptools failed. Error: spawn /home/<user>/.vscode/extensions/ms-vscode.cpptools-1.13.8-linux-x64/bin/cpptools ENOENT
+```
+
+バイナリを起動しようとしたが，`ENOENT`が返されている．
+
+勘の良いNixOSユーザならこの時点で`patchelf`の存在を思い出すだろう．
+
+### 原因
+
+全く同じ[問題](https://discourse.nixos.org/t/vscode-c-cpptools-and-clangd-not-working/21902/1)がNixOSのDiscourseに上がっており，[完璧な回答](https://discourse.nixos.org/t/vscode-c-cpptools-and-clangd-not-working/21902/2)も示されていることから，__これを読めば原因も対応もわかる__のだが，調査中に記事を書くつもりでメモをここまで書いてしまったので，この記事も最後まで書き切ろう．
+
+このVS Code Extensionには，事前ビルド済みのバイナリが含まれている．
+
+一般的な大多数のLinux Distributionでは問題なく動作するのだろうが，NixOSはglibcですら複数のバージョンの同居を許す柔軟なLinux Distributionのため，他のDistributionでビルドされたバイナリが期待する場所に共有ライブラリが設置されていないのだ．
+
+実際に`ldd`で，エラーを出力しているバイナリが使用する共有ライブラリを見てみよう．
+
+```shell
+$ ldd ~/.vscode/extensions/ms-vscode.cpptools-1.13.8-linux-x64/bin/cpptools                              
+	linux-vdso.so.1 (0x00007ffc2d709000)
+	libm.so.6 => /nix/store/<hash>-glibc-2.35-163/lib/libm.so.6 (0x00007f25a36e8000)
+	libpthread.so.0 => /nix/store/<hash>-glibc-2.35-163/lib/libpthread.so.0 (0x00007f25a36e3000)
+	libc.so.6 => /nix/store/<hash>-glibc-2.35-163/lib/libc.so.6 (0x00007f25a3400000)
+	libdl.so.2 => /nix/store/<hash>-glibc-2.35-163/lib/libdl.so.2 (0x00007f25a36de000)
+	librt.so.1 => /nix/store/<hash>-glibc-2.35-163/lib/librt.so.1 (0x00007f25a36d9000)
+	libgcc_s.so.1 => /nix/store/<hash>-glibc-2.35-163/lib/libgcc_s.so.1 (0x00007f25a36bd000)
+	/lib64/ld-linux-x86-64.so.2 => /nix/store/<hash>-glibc-2.35-163/lib64/ld-linux-x86-64.so.2 (0x00007f25a37ca000)
+```
+
+実行時リンカーとしてldを期待しているが，我らがNixOSには`/lib64`ディレクトリが存在しない．実行時にENOENTで落ちるわけである．
+
+### 対応
+
+前述の[完璧な回答](https://discourse.nixos.org/t/vscode-c-cpptools-and-clangd-not-working/21902/2)の通り，対応は２つ考えられる．
+
+1. VS Code Extension内に含まれるバイナリに対して手動でpatchelfをあてる
+2. ExtensionをNixで入れる
+
+正直どっちでもいいのだが，Extensionのアップデート毎にpatchelfを毎回あてることを考えると流石に面倒であり，自動化するとなると結局nix式を自分で書いていそうなので，それならば最初から先人が書いたnix式を有効活用させてもらおう．
+
+私はhome-managerで作業環境の構成を管理しているので，回答にあげられていた`override`ではなく，home-managerに以下のスニペットを追加することで対応することにした．
+
+```nix
+let
+  unstable = import <unstable> { config.allowUnfree = true; };
+in
+{
+  programs.vscode = {
+    enable = true;
+    package = unstable.vscode;
+    extensions = with unstable.vscode-extensions; [
+      ms-vscode.cpptools
+    ];
+  };
+}
+}
+```
+
+unstable channelを参照しているのは，この記事を書いている12月26日現在，stableにあるVS Codeのバージョンが1.73系と少し古く，一部のExtensionが動かなかっためである．
+
+nixは配備先に既にファイルがある場合，シンボリックリンクの作成を行わないので，このソリューションを機能させるためには，事前にms-vscode.cpptoolsをVS Codeから削除する必要があることに注意する．
+
+`~/.vscode/extensions/ms-vscode.cpptools-<version>-<arch>`が存在しないことを確認したら，上記スニペットをimportして，`home-manager switch`をする．
+
+プロファイルの切換が完了したら，nixで導入したextensionが存在することを確認してみよう．
+
+```shell
+$ ls -la ~/.vscode/extensions/ms-vscode.cpptools
+lrwxrwxrwx 1 <user> users 100 Dec 27 09:56 /home/<user>/.vscode/extensions/ms-vscode.cpptools -> /nix/store/<hash>-home-manager-files/.vscode/extensions/ms-vscode.cpptools
+```
+
+実行時リンカーのパスが適切なものに替わっていることも確認してみる．
+
+```shell
+$ ldd ~/.vscode/extensions/ms-vscode.cpptools/bin/cpptools
+        linux-vdso.so.1 (0x00007ffc601db000)
+        libm.so.6 => /nix/store/<hash>-glibc-2.35-163/lib/libm.so.6 (0x00007f8c47cae000)
+        libpthread.so.0 => /nix/store/<hash>-glibc-2.35-163/lib/libpthread.so.0 (0x00007f8c47ca9000)
+        libc.so.6 => /nix/store/<hash>-glibc-2.35-163/lib/libc.so.6 (0x00007f8c47a00000)
+        libdl.so.2 => /nix/store/<hash>-glibc-2.35-163/lib/libdl.so.2 (0x00007f8c47ca4000)
+        librt.so.1 => /nix/store/<hash>-glibc-2.35-163/lib/librt.so.1 (0x00007f8c47c9f000)
+        libgcc_s.so.1 => /nix/store/<hash>-glibc-2.35-163/lib/libgcc_s.so.1 (0x00007f8c47c83000)
+        /nix/store/<hash>-glibc-2.35-163/lib/ld-linux-x86-64.so.2 => /nix/store/<hash>-glibc-2.35-163/lib64/ld-linux-x86-64.so.2 (0x00007f8c47d90000)
+```
+
+問題ないようだ．
+
+この状態でVS CodeでC++のコードを開くと，冒頭のエラーは表示されず，IntelliSenseやJumpなどが機能することを確認することができた．
+
+## 最後に
+
+私は普段Linuxを使うようになったが，macOSやWindowsでも作業することがあるので，複数環境でも同一の環境を構成出来るようVS Code Setting Syncを使用している．
+
+これは設定だけではなくExtensionも同期するため，Nix(home-manager)との二重管理状態がどういう影響を及ぼすのかについては確認できていない．
+
+なにか不都合が出たら，また記事にするかもしれない．

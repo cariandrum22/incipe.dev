@@ -1,0 +1,180 @@
+---
+title: "NixOSでFlatpakを使う"
+slug: "using-flatpak-with-nixos"
+description: "Jamiを使うにあたって，Flathubに登録されているFlatpakも試してみた．結局，最終的にはFlatpakではなくNixで提供されているパッケージを使うことにしたのだが，その過程でNixOSにFlatpakの導入と削除をおこなったので，その経緯を記録として残しておく．"
+publishedOn: "2023-01-07"
+tags: ["nixos","flatpak"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"2cQ8JdzG9VcShJ8Mge9TpN","contentType":"post","updatedAt":"2023-01-11T13:03:09.558Z"}
+---
+
+## 導入
+
+[NixOSでSIP Phoneを使う](https://incipe.dev/blog/post/using-sip-phone-on-nixos/)ではJamiのQtクライアントを導入したのだが，FlatpakではGnomeクライアントが配布されているようなので，その導入を行った．
+
+最終的には，Gnomeクライアントをあえて使う理由はなく，またQtクライアントであれば[home-manager](https://github.com/nix-community/home-manager)で構成管理もできるため，Flatpakごと削除してしまったのだが，導入手順だけはメモしていたので記事として残しておくことにした．
+
+## Flatpakとは
+
+以前はxdg-appという名前で配布されていたLinux用のソフトウェアパッケージ管理システムである．
+
+主にLinuxのデスクトップアプリのパッケージングと配布に利用され，実行環境がSandbox化されていることから安全性が高く，珍しいことに[NixOS向けのQuick Setupページ](https://flatpak.org/setup/NixOS)がある．
+
+## 構成
+
+前述のNixOS Quick Setupではconfiguration.nixに`service.flatpak.enable = true;`を追加すれば良いと書かれているが，Flatpakは`XDG Desktop Portals`を必要とする．これがNixOS上で有効でない場合，以下のようなエラーが出力される．
+
+```shell
+$ sudo nixos-rebuild switch
+building Nix...
+building the system configuration...
+error:
+       Failed assertions:
+       - Setting xdg.portal.enable to true requires a portal implementation in xdg.portal.extraPortals such as xdg-desktop-portal-gtk or xdg-desktop-portal-kde.
+(use '--show-trace' to show detailed location information)
+```
+
+XDG Desktop Portalsは，GnomeかKDEのバックエンド実装が必要となるため，`xdg.portal.enable = true;`だけではなく，`xdg.portal.extraPortals`属性にgtkかkdeのバックエンド実装を渡す必要があるようだ．
+
+最終的に，Flatpakを動かすためにはconfiguration.nixに以下の式を含む必要がある．
+
+```nix
+{
+  xdg.portal.enable = true;
+  xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-gtk];
+  services.flatpak.enable = true;
+}
+```
+
+gtkにしたのはただの好みである．
+
+この設定を追加後，`nixos-rebuild switch`をすると，`flatpak`コマンドが実行可能となっているはずである．
+
+早速,[FlathubにあるJami](https://flathub.org/apps/details/net.jami.Jami)を入れてみよう．
+
+```shell
+$ flatpak install flathub net.jami.Jami
+
+Note that the directories
+
+'/var/lib/flatpak/exports/share'
+'/home/claude/.local/share/flatpak/exports/share'
+
+are not in the search path set by the XDG_DATA_DIRS environment variable, so
+applications installed by Flatpak may not appear on your desktop until the
+session is restarted.
+
+Looking for matches…
+error: No remote refs found for ‘flathub’
+```
+
+なるほど．
+
+どうやら，Flatpakはデフォルトで何もリポジトリが設定されていないようなので，flathubを先に追加する．
+
+```shell
+$ flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+Note that the directories
+
+'/var/lib/flatpak/exports/share'
+'/home/claude/.local/share/flatpak/exports/share'
+
+are not in the search path set by the XDG_DATA_DIRS environment variable, so
+applications installed by Flatpak may not appear on your desktop until the
+session is restarted.
+```
+
+これでよいはずだ．再びJamiのインストールを試みる．
+
+```shell
+$ flatpak install flathub net.jami.Jami
+
+Note that the directories
+
+'/var/lib/flatpak/exports/share'
+'/home/claude/.local/share/flatpak/exports/share'
+
+are not in the search path set by the XDG_DATA_DIRS environment variable, so
+applications installed by Flatpak may not appear on your desktop until the
+session is restarted.
+
+Looking for matches…
+Required runtime for net.jami.Jami/x86_64/stable (runtime/org.kde.Platform/x86_64/6.3) found in remote flathub
+Do you want to install it? [Y/n]: Y
+
+net.jami.Jami permissions:
+    ipc                    network                  fallback-x11       pulseaudio       wayland       x11       devices       per-app-dev-shm       file access [1]
+    dbus access [2]        bus ownership [3]
+
+    [1] xdg-config/kdeglobals:ro, xdg-download
+    [2] com.canonical.AppMenu.Registrar, org.freedesktop.Notifications, org.freedesktop.ScreenSaver, org.kde.StatusNotifierWatcher
+    [3] cx.ring.Ring, org.mpris.MediaPlayer2.chromium.instance2
+
+        ID                                                       Branch             Op            Remote             Download
+ 1. [✓] net.jami.Jami.Locale                                     stable             i             flathub              5.3 kB / 55.3 MB
+ 2. [✓] org.freedesktop.Platform.GL.default                      21.08              i             flathub            129.6 MB / 129.8 MB
+ 3. [✓] org.freedesktop.Platform.GL.nvidia-520-56-06             1.4                i             flathub            407.5 MB / 407.0 MB
+ 4. [✓] org.freedesktop.Platform.openh264                        2.0                i             flathub              1.8 MB / 1.5 MB
+ 5. [✓] org.kde.KStyle.Adwaita                                   6.3                i             flathub              7.8 MB / 7.8 MB
+ 6. [✓] org.kde.Platform.Locale                                  6.3                i             flathub             17.7 kB / 325.8 MB
+ 7. [✓] org.kde.Platform                                         6.3                i             flathub            269.6 MB / 247.8 MB
+ 8. [✓] net.jami.Jami                                            stable             i             flathub            129.8 MB / 127.0 MB
+
+Installation complete.
+```
+
+無事に入ったようだ．
+
+Flatpakで導入したパッケージは，`flatpak run <Application ID>` で実行することができる．
+
+```shell
+$ flatpak run net.jami.Jami
+```
+
+## 削除
+
+さて，インストールは無事完了し，Jamiが使えることを確認したのだが，結局Flatpak版のJamiを使うことは以下の理由からやめた．
+
+- [NixOSでSIP Phoneを使う](https://incipe.dev/blog/post/using-sip-phone-on-nixos/)で導入したNixのパッケージと同様に，事前にjamidを起動しておかないとError : jamid is not available, make sure it is runningが出て落ちる
+- Flatpakで提供されるGnome実装に特段のメリットを感じないので，それならばhome-managerで構成管理できるNixのパッケージのほうが望ましい
+
+というわけで，Flatpakごと削除することにした．
+
+Flatpak自体の無効化はconfiguration.nixに追加した設定を抹消し，nixos-rebuild switchをすればよいだけだが，使用していないファイルが残るのが気になったので，追加で以下のような削除手順を実施した．
+
+### Flatpakの全パッケージの削除
+
+`flatpak uninstall --all`ですべて消すことが出来る．
+
+```shell
+$ flatpak uninstall --all
+
+        ID                                                      Branch           Op
+ 1. [-] net.jami.Jami                                           stable           r
+ 2. [-] org.kde.Platform                                        6.3              r
+ 3. [-] org.kde.Platform.Locale                                 6.3              r
+ 4. [-] net.jami.Jami.Locale                                    stable           r
+ 5. [-] org.freedesktop.Platform.GL.default                     21.08            r
+ 6. [-] org.freedesktop.Platform.GL.nvidia-520-56-06            1.4              r
+ 7. [-] org.freedesktop.Platform.openh264                       2.0              r
+ 8. [-] org.kde.KStyle.Adwaita                                  6.3              r
+
+Uninstall complete.
+```
+
+### ファイルシステム上のオブジェクトの削除
+
+[それっぽい記事](https://askubuntu.com/questions/1174596/how-to-completely-remove-flatpak)とplocateで発見したいくつかのディレクトリを再帰的に削除した．
+
+```shell
+$ sudo rm -rf /var/lib/flatpak
+$ rm -rf ~/.cache/flatpak
+$ rm -rf ~/.local/share/flatpak
+$ rm -rf ~/.var/app
+```
+
+## 最後に
+
+Flatpak自体は便利そうなのだが，NixOSとhome-managerを使っている一番大きな理由が`構成を宣言的に管理できる`ことなので，出来る限りNixの世界で完結できるようにしていきたい．

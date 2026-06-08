@@ -1,0 +1,53 @@
+---
+title: "何もしていないのにKVMが壊れた！"
+slug: "the-kvm-broke-when-i-didnt-do-anything"
+description: "自信の備忘のために残す．昨日まで正常に稼働していたKVMが突然，今日の朝から画面を出力しなくなった．KVMの問題を疑い様々な切り分けをしたが，結果問題があったのはモニターであり，モニター背面パネルにある主電源OFF/ONによって解消した．"
+publishedOn: "2022-05-26"
+tags: ["essey","kvm","monitor","troubleshooting"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"74sfJy59WA6kA4s9gEeNQy","contentType":"post","updatedAt":"2022-07-20T11:50:47.285Z"}
+---
+
+自身の備忘のために残す．
+
+以前，全く同じような事象に出会い，同じような対処をした気がするのだが，検索して引っかかる類の問題ではなかったので，しなくてよい苦労をしてしまった．
+
+将来また同じ目にあった自分が，検索でここにたどり着けることを願う．
+
+## TR;DR
+
+- KVM: ATEN CP 1942DP, Monitor: EIZO FlexScan EV2785 * 2という環境で，DisplayPortを使用した接続を行っている
+- PCを接続しても，切り替えを行っても，モニター出力が`DisplayPort　入力信号なし`のままセーブモードに移行してしまう
+- KVMのリセットや接続の切り分けなどを行ったが，原因はむしろモニターにあった
+- 最終的に，モニターの背面スイッチの電源をOFF/ONすることで解消した
+
+## 本文
+
+私は据え置き型の自作PCとMacBook Proを，仕事と趣味に活用している．
+
+仕事部屋には，4K 27inchデュアルモニタと， キーボード，トラックボールのセットが設置されているのだが，これをいちいち接続替えするのは面倒なので，KVMのフロントスイッチで切り替え出来るようにしている．
+
+朝7:30，いつものように寝室からMacBook Proを持って仕事部屋へ入り，KVMとの接続を行うが，一向に外部モニタに何も映らない．
+
+MacBook Proか，USB3.0 to DPアダプタの問題を疑い，自作PCの方の電源を入れて，KVMの接続先を切り替えて見たが，一向に外部モニタへの出力がない．
+
+切り替えたタイミング，あるいはケーブルを抜き差ししたタイミングで，モニタは一度ONになるのだが，入力なしという表示のままセーブモードに遷移してしまうのだ．
+
+私はこの挙動をみて，「KVMからモニタのラインは正常で，PCから端末のラインあるいはKVM自体に問題があるのだな」と考え，KVMをリセットしたり，ケーブルを抜き差ししたり，MacBookのSMCリセットを試みたり，切り分けを行ったのだが，一向に解消しない．
+
+これだけやっても解消しないということは，きっとKVMが壊れたのだろう．と思い「何もしてないのにKVMが壊れた」という言葉が頭をよぎった．
+
+私が使っているKVMは， `ATEN CP1942DP` というものだが，日本国内で購入すると微妙に高いうえ，当時在庫があまりなかったことから，amazon.comで購入している．
+
+そんな経緯から，日本の窓口だと多分対応してもらえないよなー．などと考え，ATEN本家サイトのサポートリクエストフォームを開いたところで，`そもそも最初に可能性を切り捨てた，KVMからモニタのラインの検証をしていない`ことに気がついた．
+
+ダメ元で検証しようと，モニタから伸びているDPケーブルをPCに直結しても，なんとモニタの挙動は変わらないではないか！
+
+私が使用しているモニタは`EIZO Flex Scan EV2785`というものなので，製品名で検索し，[マニュアル](https://www.eizo.co.jp/support/db/files/manuals/03V27054A2/UM-03V27054A2-JA.pdf)を確認すると，27Pの`第 5 章 こんなときは`に`Display Port 入力信号なし`と表示されている場合の対処が載っていた．
+
+その中に`背面の主電源スイッチを切り、もう一度スイッチを入れてみてください。`という記述がある．フロントの電源スイッチのON/OFFは試していたのだが，そもそも背面に主電源スイッチがあることをすっかり忘れていたため，これはまだ試していなかった．
+
+背面スイッチの電源を切る．10秒待つ．再び入れる・・・なんと正常に画面が表示されたではないか！
+
+問題はモニターだったのだ．疑ってごめんよATEN．

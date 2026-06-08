@@ -24,7 +24,7 @@
         easy-ps = import easy-purescript-nix { inherit pkgs; };
       in
       {
-        devShell = pkgs.mkShell {
+        devShells.default = pkgs.mkShell {
           buildInputs = [
             easy-ps.purs-0_15_15
             easy-ps.psc-package
@@ -33,7 +33,7 @@
             easy-ps.zephyr
             pkgs.nodejs
             pkgs.esbuild
-            pkgs.nodePackages.node-gyp
+            pkgs.node-gyp
             pkgs.dhall-lsp-server
             pkgs.autoconf
             pkgs.automake

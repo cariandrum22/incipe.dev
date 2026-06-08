@@ -1,5 +1,5 @@
 import React from "react"
-import { GatsbyImage } from "gatsby-plugin-image"
+import Image from "../atoms/Image"
 import ReadingTime from "../atoms/ReadingTime"
 import Date from "../atoms/Date"
 import type { ContentfulPost } from "../../types/contentful"
@@ -15,7 +15,7 @@ const Card: React.FC<Props> = ({ post }) => (
   >
     <div className="shrink-0">
       {post.heroImage?.gatsbyImageData && (
-        <GatsbyImage
+        <Image
           className="h-48 w-full object-cover"
           alt=""
           image={post.heroImage.gatsbyImageData}
@@ -44,7 +44,7 @@ const Card: React.FC<Props> = ({ post }) => (
             <a href={`/blog/author/${author?.identity}`}>
               <span className="sr-only">{author?.name}</span>
               {author?.picture?.gatsbyImageData && (
-                <GatsbyImage
+                <Image
                   className="h-10 w-10 rounded-full"
                   alt=""
                   image={author?.picture?.gatsbyImageData}

@@ -1,0 +1,189 @@
+---
+title: "Windows 11 ProでWindows Hello face authenticationが動かなくなった"
+slug: "windows-hello-face-authentication-stopped-working-on-windows-11-pro"
+description: "以前機能していたWindows Hello face authenticationがあるときから使えなくなってしまった．再び使えるようにするために，インターネット上で見つけた様々な対処を実行し，新しいハードウェアを購入し，最終的にはOSのクリーンインストールまで実行したが問題は解決しなかった．最終的に，カメラを接続しているUSBポートを変更することによって回復した．\n"
+publishedOn: "2023-06-15"
+tags: ["windows","troubleshooting","webcam","hello"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"1mXOIXile0uJV3LuMoXBsE","contentType":"post","updatedAt":"2024-05-19T23:48:32.963Z"}
+---
+
+この文章に読む価値はない．
+
+Windows Hello face authenticationは確かに動くようになった．しかし，この対処のために，私はとても無駄な時間を費やしてしまったため，せめて記録を残すことによって浪費した時間にわずかでも価値を持たせたいという，非常に哀れな動機によってこの記事は書かれている．
+
+## 導入
+
+自分で組んだデスクトップ機には２機のSSDが実装されているが，そのうちの１機にはWindows 1０ Proをインストールしている．
+
+これが起動している時間はほぼSteamの起動とイコールなのだが，Windowsのデスクトップアプリケーションを書く羽目になったり，奇妙キテレツなマクロ付きMicrosoft Officeドキュメントを処理するときなどは，仕事でも使用している．
+
+このデスクトップ機のマザーボードには[ASUSのPrime X299 Edition 30](https://www.asus.com/jp/motherboards-components/motherboards/prime/prime-x299-edition-30/)を使用しており，これには[Smart Control Console](https://www.asus.com/jp/support/faq/1041666/)というオプションが付いていた．
+
+このデバイスは，カメラ，赤外線LED，ToFセンサー，OLEDディスプレイなどを備えており，Windows Helloの顔認証にも使えるため利用してきた．
+
+## 発端
+
+あるとき，Windows 11にアップグレードできるようになったので何も考えずにアップグレードを実行したのだが，その直後か，あるいはアップグレード後のいつかのタイミングで，突然顔認証が利用できなくなった．
+
+一時的な不具合だと軽く考え，しばらく放置していたのだが，毎回パスワードやPINでログインやロック解除をするのが面倒になってきたので，どうにか再び顔認証を使える状態にしたいと考えた．
+
+軽く対処法について検索してみたところ，**一度デバイスの登録を解除してから，再度登録し直せば良い**といったような記事を複数見つけた．試してみると，セットアップを開始したタイミングで一瞬だけ赤外線LEDが灯り，その後`Sorry, Something wrong`というエラー画面が出る[^1]．OSの再起動を挟みながら何度試しても駄目である．というか，そもそも最初に登録解除してから一度も登録が成功しない．
+
+## デバイスの交換
+
+ここにきて，デバイスの問題を疑い始めた．
+
+Smart Control Consoleはジェスチャーによる制御や音声認識，任意の情報をOLEDに表示できるなど，なかなかおもしろいデバイスではあるのだが，２０２３年現在Webカメラとして考えると正直画質がかなり悪い．
+
+また，頻繁に音声認識が誤動作してうざいなと思うこともあったので，切り分けの意味でも，Windows Helloに正式に対応していると表明している製品を買うことにした．
+
+[NexiGo HelloCam](https://www.nexigo.com/products/hellocam)である．
+
+Amazonで購入し，届き次第早速繋ぎ変えてみたのだが，**状況は何も変わらなかった**．**デバイスの問題ではなさそうだ**．
+
+## 再びの調査
+
+困った．
+
+他に手はないものかと，再びインターネット上の叡智を頼ることにした．
+
+- [Window Hello doesnt work, says "Sorry Something went wrong"](https://answers.microsoft.com/en-us/windows/forum/all/window-hello-doesnt-work-says-sorry-something-went/c080309c-2b4f-4fb3-8099-76861815c33e)
+- [How to Fix Windows Hello Not Working After Windows 10 Update](https://softwarekeep.com/help-center/how-to-fix-windows-hello-not-working-after-windows-10-update)
+- [Fix: Close Windows Hello and Then Try the Setup Again](https://windowsreport.com/something-went-wrong-close-windows-hello/)
+
+述べられた対処法はおおよそ次のようなものである．
+
+- TPMがOnになっているか確認して，OffであればOnにする
+- Device Managerから以下のDriverを無効化したあと，再度有効化する．またはDriverを更新する
+  - Biometric Device -> Facial Recognition (Windows Hello) Software Device
+  - Camera -> 該当のデバイス
+- Windows Updateでシステムを最新の状態にする
+- 動いていた頃のドライバにロールバックする
+- System File CheckerやDeployment Image Servicing and Managementを使用してシステムの破損チェック・修復を実行する
+- グループポリシーで顔認証の設定を有効する
+
+**全部試したが，全滅である**．
+
+- [Windows Hello not working in Windows 11/10](https://www.kapilarya.com/windows-hello-not-working-in-windows-11-10)
+
+上記の記事にあるとおり，`NGCフォルダを削除する`という荒業も効果はない．
+
+- [How to Fix Windows Hello When It Stops Working](https://www.makeuseof.com/windows-hello-fixes/)
+
+すべての回復シナリオがうまくいかない場合，Windowsを初期化するしかないようだ．本当にそうなのだろうか，そんな気がしてきた．
+
+## クリーンインストール
+
+もはやお手上げである．クリーンインストールで回復する可能性があるのならやるのみだ．
+
+なにが影響するかわからないので，クリーンインストールの実行に際して，以下の準備をした
+
+- Intuneから削除
+  - 業務でも使用しているのでBYODデバイスとして所属企業のポリシーを一部受け入れている
+- **ファイル移行しない設定**でリセットを実行
+
+こういうときのために6TBのHDDを搭載しているので，Windows標準の機能でイメージバックアップを取っておく．
+
+**結論から言うと，クリーンインストールしても状況は変わらなかった．
+
+**クリーンインストール後に，先に行った一通りの対処を実施しても，何も変わらなかった**．
+
+## 天啓
+
+さて，天下のMicrosoft様のFxxkindowsとかいう産廃は，ダイアログに役立つ情報を何一つ吐いてくださらないので困ったものだ．と考えていたところ，そう言えば**一応WindowsにもSyslog的なものがあった**ことを思い出した．
+
+早速，**Event Viewer**を開いた状態で，Windows Helloの顔認証をセットアップしてみる．
+
+もちろん，セットアップに失敗するのだが，そのタイミングで，以下のようなログが`Information`レベルで出力されていた．
+
+```
+Fault bucket , type 0
+Event Name: CameraStartupFailureEvent
+Response: Not available
+Cab Id: 0
+
+Problem signature:
+P1: 10.0.22621.608
+P2: StartStreamingFailed
+P3: 0xc00d3704
+P4: 
+P5: 
+P6: 
+P7: 
+P8: 
+P9: 
+P10: 
+
+Attached files:
+
+These files may be available here:
+NULL
+
+Analysis symbol: 
+Rechecking for solution: 0
+Report Id: 8186473a-9b19-4648-ab1d-1d260b51d0fe
+Report Status: 1074003968
+Hashed bucket: 
+Cab Guid: 0
+```
+
+```
+Fault bucket 1474291135250877540, type 5
+Event Name: CameraStartupFailureEvent
+Response: Not available
+Cab Id: 0
+
+Problem signature:
+P1: 10.0.22621.608
+P2: StartStreamingFailed
+P3: 0xc00d3704
+P4: 
+P5: 
+P6: 
+P7: 
+P8: 
+P9: 
+P10: 
+
+Attached files:
+\\?\C:\ProgramData\Microsoft\Windows\WER\Temp\WER.ec4c44e7-c39b-4009-8d15-dbd409ebe5a2.tmp.WERInternalMetadata.xml
+\\?\C:\ProgramData\Microsoft\Windows\WER\Temp\WER.923c4522-a796-446c-965f-fa1c6bf9c83d.tmp.csv
+\\?\C:\ProgramData\Microsoft\Windows\WER\Temp\WER.63a6714f-5694-4fbc-bc29-cafd2c050c86.tmp.txt
+\\?\C:\ProgramData\Microsoft\Windows\WER\Temp\WER.629fc6d3-aded-43ec-8b92-3b8424bb6396.tmp.xml
+
+These files may be available here:
+\\?\C:\ProgramData\Microsoft\Windows\WER\ReportArchive\NonCritical_10.0.22621.608_a4b4fe54ef3a441bebff74d49826a34373737e88_00000000_8186473a-9b19-4648-ab1d-1d260b51d0fe
+
+Analysis symbol: 
+Rechecking for solution: 0
+Report Id: 8186473a-9b19-4648-ab1d-1d260b51d0fe
+Report Status: 268435456
+Hashed bucket: b340cd61ef0d88c45475bbf9f422cc64
+Cab Guid: 0
+```
+
+なるほど．そもそもカメラの起動に失敗しているようだ．
+
+しかし，Windows Helloではない別のアプリケーションからWebCamを起動するとなんの問題もなく使えている．
+
+これはなんなのだろうか．
+
+Windows　Helloとの違いを考えたとき，IR Cameraの利用有無が頭に浮かんだ．IR Cameraのドライバに問題があるのかと考え，切り分けのためにIR Cameraのドライバのみを無効化して，Hello顔認証のセットアップを試行すると，エラーなくセットアップが起動してきた．
+
+もちろん，この状態ではIR Cameraが機能しないので，結局意味はないのだが，**セットアップを阻害する原因がどうやらIR Cameraドライバであることがわかった**．
+
+さて，犯人がわかったのは良いが，最初に利用していたSmart Control Consoleも，新たに購入したHelloCamも，どちらもMicrosoft謹製のUVCドライバを使用しており，製造元からドライバの供給はない．
+
+つまり，**問題がドライバにあることがわかっても，対処のしようがない**のだ．
+
+詰んだ．
+
+と思ったのだが，最後にダメ元でUSBのポートを繋ぎ変えてみた．
+
+これをやった理由として，マザーボード据付のUSBインターフェースは複数あるわけだが，これらは異なるバス，異なるコントローラに接続されていると考えられた．Prime X299 Edition 30はThunderboltに対応しているので，Thunderboltに対応しているSUBインターフェースグループと，それ以外のSUBインターフェースグループがあり，以前正常に顔認証が使えていた頃から，カメラはThunderboltに対応しているインターフェースグループに接続されていた．ダメ元で**それ以外のUSBポートのグループに繋いだら，なんとあっさり動いてしまった**のである．
+
+時間を返してくれ．
+
+[^1]: エラーに関する調査を日本語ですると基本的に残念な情報しか出てこない．私は英語でエラーメッセージを直接検索できるように，OSの言語設定は普段から英語にしてある

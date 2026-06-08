@@ -1,0 +1,155 @@
+---
+title: "Gatsby + Contentfulの環境でMDX 2を使う"
+slug: "using-mdx-2-with-gatsby-and-contentful"
+description: "Gatsby v5とgatsby-source-contentfulの組み合わせで，MDX 2を使用する構成を組んだ．2022年11月28日現在，gatsby-plugin-mdx-v4がsourceとして使用できるのはファイルのみであるため，このプラグインを使用することは残念ながらできない．そのため，直接MDX Compilerを呼び出すという，何のひねりも無い方法で目的の構成を実現した．"
+publishedOn: "2022-11-28"
+tags: ["gatsby"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"4FQRjG4Z3Lmcim3ekB9D20","contentType":"post","updatedAt":"2022-11-28T13:06:37.055Z"}
+---
+
+## 導入
+
+GatsbyはV4.21で念願の[MDX 2に対応](https://www.gatsbyjs.com/docs/reference/release-notes/v4.21/#gatsby-plugin-mdx-v4)した．
+
+意気揚々とGatsby本体およびgatsby-plugin-mdxのバージョンをあげ，早速開発サーバを起動すると，MDXがレンダリングされない．
+
+それもそのはず，GatsbyのMDX 2対応はファイルシステムからのMDX読み込みにしか対応していないのだ．これはちゃんと[gatsby-plugin-mdx](https://www.gatsbyjs.com/plugins/gatsby-plugin-mdx/)のドキュメントを読めば，`v3 to v4: Breaking Changes`にしっかり書いてある．
+
+> gatsby-plugin-mdx only applies to local files (that are sourced with gatsby-source-filesystem)
+
+愚かな私はドキュメントをちゃんと読むより先にGoogle検索を行い，[こちら](https://xenexe.info/597f0d3c-0480-5cc6-b42e-65496c33d093)のサイトでこれを知ることとなった．
+
+私はいい加減，npm auditで山盛りの脆弱性が報告されるgatsby-plugin-mdx-v3系とMDX 1の構成を使い続けたくなかったので，gatsby-pluginを使わず直接MDX 2を実行する構成を取ることにした．
+
+本来であれば，gatsby-plugin-mdxへのコントリビュートを考えるべきなのだが，普通に仕事が忙しく，そっちに手を出すと私の実力では，解決にそれなりの時間投資が必要そうだったので日和った．と，ここに言い訳をしておく．
+
+## 前提
+
+このサイトは記事管理用のHeadless CMSとして[Contentful](https://www.contentful.com/)を使用している．
+
+そのため，記事のMarkdownテキストはContentfulのLong Textフィールドに格納されている．
+
+gatsby-plugin-mdx-v3とMDX 1の組み合わせでは，Gatsby上でGraphQLとしてクエリする際にMDXコンポーネントを取得することが出来たが，gatsby-plugin-mdx-v4ではこれを使用することができない．
+
+Markdown Text自体はContentfulから取得できるため，Gatsby Pluguinが実行していたMarkdown to MDXコンポーネント化をする部分だけを自分で書けば，目的は達成できるのではないか．と考えた．
+
+なお，Gatsbyのバージョンは5系を使用する．
+
+## 実装
+
+まずMDXの使い方を知るためにガイドを流し読みしてみた．
+
+求めているものっぽいことが[MDX on demand](https://mdxjs.com/guides/mdx-on-demand/)に記載されている．
+
+どうやら，MDXコンパイラにMarkdownを渡すと，JavaScript表現が得られるようだ．
+
+合わせて[パッケージのドキュメント](https://mdxjs.com/packages/mdx/)に目を通す．
+
+どうやら`compile`して得られたJavaScriptを`run`すれば良いらしい．お誂え向きに，2つを同時にする`evaluate`という，そのままの感じのAPIがあるようだ．
+
+また，末尾にSyncと追加同期APIも用意されている．基本的に非同期APIを使えということだが，やりたいことは静的サイトジェネレータ上でMDXコンテンツを扱うことなので，同期APIを使用することにする．
+
+最終的に以下のようなコンポーネントを作ることで，目的を果たした．
+
+### StyledMDXComponent.tsx
+
+とりあえず動くレベルのものだが，用をなしている．が，そのうち手直ししたい．名前含めて．
+
+やっていることは単純で，単にMarkdownが格納されたstringを引数としてJSXを返却するだけである．
+
+GitHub Flavored MarkdownやSyntax Highlight，それから数式をどこでも使いたいので，そのためのremarkとrehypeをデフォルト引数とした．
+
+```typescript
+import React from "react"
+import * as runtime from 'react/jsx-runtime';
+import { evaluateSync } from "@mdx-js/mdx"
+import { RunnerOptions } from "@mdx-js/mdx/lib/util/resolve-evaluate-options"
+import remarkGfm from "remark-gfm"
+import remarkMath from "remark-math"
+import rehypeKatex from "rehype-katex"
+import rehypePrism from "rehype-prism-plus"
+
+type Props = JSX.IntrinsicAttributes &
+  React.ClassAttributes<HTMLParagraphElement> &
+  React.HTMLAttributes<HTMLParagraphElement>
+
+const components = {
+  p: (props: Props) => <p {...props} className="prose-slate mx-auto mt-6" />,
+  h1: (props: Props) => (
+    <h1
+      {...props}
+      className="mt-8 max-w-prose text-3xl font-normal leading-8 tracking-tight text-slate-800"
+    />
+  ),
+  h2: (props: Props) => (
+    <h2
+      {...props}
+      className="mt-8 max-w-prose text-2xl font-normal leading-8 tracking-tight text-slate-700"
+    />
+  ),
+  h3: (props: Props) => (
+    <h3
+      {...props}
+      className="mt-8 max-w-prose text-xl font-normal leading-8 tracking-tight text-slate-600"
+    />
+  ),
+}
+
+const defaultOptions = {
+  remarkPlugins: [remarkGfm, remarkMath],
+  rehypePlugins: [rehypeKatex, rehypePrism],
+}
+
+const StyledMDXComponent = (mdx: string, options = defaultOptions) => {
+  const { default: Content } = evaluateSync(mdx, { ...runtime as RunnerOptions, ...options })
+  return <Content components={components} />
+}
+
+export default StyledMDXComponent
+```
+
+### Contents
+
+サンプルコードをでっち上げるのも面倒なので，このサイトの，この記事を書いている現在に置けるAboutページのコードをそのまま載せる．
+
+基本的に，先程のコンポーネントをimportして，関数を呼び出すだけである．
+
+```typescript
+import React from "react"
+import { useStaticQuery, graphql } from "gatsby"
+import StyledMDXComponent from "../components/StyledMDXComponent"
+
+const Contents: React.FC = () => {
+  const data = useStaticQuery(graphql`
+    query {
+      contentfulPage(title: { eq: "About" }) {
+        title
+        body {
+          body
+        }
+      }
+    }
+  `)
+
+  return (
+    <div className="prose relative mx-auto max-w-7xl bg-white px-4 pt-16 pb-20 sm:px-6 md:justify-between lg:px-8 lg:pt-24 lg:pb-28">
+      <h1 className="border-b border-slate-500 pb-4 text-2xl text-slate-700">
+        {data.contentfulPage.title}
+      </h1>
+      {StyledMDXComponent(data.contentfulPage.body.body)}
+    </div>
+  )
+}
+
+const About: React.FC = () => <Contents />
+
+export default About
+```
+
+## 最後に
+
+この記事はいろいろ雑なのだが，酒を飲みすぎている成果，記録して置かないと最近すぐ忘れるのと，こういった内容はすぐ陳腐化して公開する気を無くしそうなので，記憶が新しいうちに公開しておくことにする．
+
+もっとエレガントな方法があれば教えてほしい．

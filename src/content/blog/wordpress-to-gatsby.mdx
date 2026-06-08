@@ -1,0 +1,54 @@
+---
+title: "WordPressからGatsbyへ"
+slug: "wordpress-to-gatsby"
+description: "個人で保有していたWordPressサイトがいつの間にか完全に死んでいた．ここ数年まともに運営していたわけではないので当然なのだが，最近文書を書く能力の衰えを感じてきたので，日常的になにかアウトプットする場をGatsbyで作ってみることにした．この記事から得られるものはなにもない．"
+publishedOn: "2022-05-25"
+tags: ["essay","gatsby"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"2bPjigEaSIwUH8cXgcx0zz","contentType":"post","updatedAt":"2022-11-28T10:47:27.887Z"}
+---
+
+## WordPressが死んだ
+
+WordPressで運営していた個人サイトを全くメンテせず放置し早3年．気がつけば登録していたクレジットカードも番号も変わり，サーバ費用が引き落としできなくなっていたことにも気づかず，サイトはひっそりと消滅していた．
+
+今日，なにか記事を書いたり，作品を公開したいと思えば，余程こだわりが無い限り，いくらでも無料ですぐに使え，効率的に集客できるサービスがいくらでもある．自分でサイトを持つのは大体の場合，不経済だ．
+それでもあえて自分のサイトを持つのは，自己満足かブランディングに自信があるかのどちらかだろう．
+
+私の場合，もちろん自己満足である．
+
+サイトを作ろうと思ったとき，第一の候補にあがるのはWordPressだ．
+
+Blog Engine/CMSで有るところのWordPressは，世界中で利用されており，ユーザコミュニティや経済圏も大きく，高品質で高機能なウェブサイトを短期間でつくることができる．
+
+[Envato](https://elements.envato.com/)を活用すれば，デザインや機能追加のコストも大幅に削減できる．
+
+振り返れば，月間PVで3,000程度の個人サイトレベルから，月間PV億単位のメディアまで，様々な規模のサイトをWordPressで構築・運用してきた．なんだかんだ10年以上こいつに関わって来ているが，私はPHPとWordPressのコードがとても嫌いだ．
+有用だし，仕事が多いことは認めるが，WordPressのコードやコーディング規約を見るたびに頭痛がしてくる．
+
+閑話休題．
+
+せっかくサイトを新規につくるのであれば，これまでにやったことが無い技術を使ってみよう．
+ということで，
+
+- 静的サイトジェネレータとして[Gatsby](https://www.gatsbyjs.com/)を使う
+- Headless CMSとして[contentful](https://www.contentful.com/)を使う
+- APIサーバとして[HASURA](https://hasura.io/)を使う
+- コードをTypeScriptとPureScriptで書く
+
+といったことを目的に，新しくサイトを作ってみることにした．
+
+## Gatsbyを使ってみる
+
+実は，以前も軽く触ったことがあるのだが， 当時はGatsby固有のファイルを直接TypeScriptで書くことができず，全体をTypeScript化しようとするとなかなかHackyなことをする必要があったため，気分が乗らず，なにかを作るということはしなかった．
+
+改めて見てみると，`gatsby@4.8.0`からGatsby固有のファイルも直接TypeScriptで書くことができるようになったようだ．
+
+Gatsbyの入門記事は巷に溢れており，また本家のドキュメントも充実しているので，導入手順などには特段触れない．
+
+このサイトのソースコード一式は[ここ](https://github.com/cariandrum22/incipe.dev)にある．
+
+## これから
+
+書き溜めていたメモや成果物などを少しずつここに上げていこうと思う．

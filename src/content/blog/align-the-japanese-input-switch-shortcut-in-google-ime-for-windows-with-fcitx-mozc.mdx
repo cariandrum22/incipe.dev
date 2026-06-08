@@ -1,0 +1,42 @@
+---
+title: "WindowsのGoogle IMEにおける日本語入力切り替えショートカットをfcitx-mozcに合わせる"
+slug: "align-the-japanese-input-switch-shortcut-in-google-ime-for-windows-with-fcitx-mozc"
+description: "私はLinux，,macOS，Windowsを使っているが，全ての環境でIMの切り替えショートカットを`Ctrl+Space`としている．しかし，Windows環境ではクリーンインストールをして以来，この設定をしていなかったので，Google IMEにショートカットの設定をするついでに，備忘録としてこの記事を書いた．"
+publishedOn: "2024-01-30"
+tags: ["windows","ime","japaniese","google"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"1Gh6apI7nbfft7uuoEjl9i","contentType":"post","updatedAt":"2024-05-19T23:52:38.628Z"}
+---
+
+## 導入
+
+私はNixOSでfcitx-mozcを使っており，fcitxのIMスイッチは`Ctrl+Space`としてある．
+
+環境ごとに日本語入力の切り替えショートカットが違うと余計な意識のスイッチングコストがかかるので，macOSやWindowsでもIMの切り替えショートカットは同じものに統一するようにしている．
+
+Windows環境ではクリーンインストールをして以来，この設定をしていなかったので，設定をするついでに備忘録としてこの記事を書くことにした．
+
+## 設定
+
+1. Google IMEを右クリックし，コンテキストメニューの`Properties`を開く[^1]
+2. `Google Japanese Input Settings`ウィンドウが開くので，`General`タブの`Keymap`セクションから`Keymap style`の`Customize...`ボタンを押下する
+3. `Google Japanese Input keymap editor`ウィンドウが開くので，ウィンドウ左下にあるプルダウンから`New Entry`を選択
+
+以下2つのエントリを追加する．
+
+| Mode           | Key        | Command        |
+| :------------- | :--------- | :------------- |
+| DirectInput    | Ctrl Space | Activate IME   |
+| Precomposition | Ctrl Space | Deactivate IME |
+
+4. `Google Japanese Input keymap editor`ウィンドウで`OK`ボタンを押下して，ウィンドウを閉じる
+5. `Google Japanese Input Settings`ウィンドウで`OK`ボタンを押下して，ウィンドウを閉じる
+
+## 余談
+
+PrecompositionというModeがどういう状態を示すのかよくわからなかったので調べた．どうやら**IMEが有効な状態（直接入力ではない）で，何も入力がない**状態を意味するようだ．腑に落ちた．
+
+詳細は[Google日本語入力のコマンドと状態遷移を解明する - 檜山正幸のキマイラ飼育記 (はてなBlog)](https://m-hiyama.hatenablog.com/entry/2020/07/20/161634)に非常によくまとまっている．
+
+[^1]: エラーに関する調査を日本語ですると基本的に残念な情報しか出てこない．私は英語でエラーメッセージを直接検索できるように，OSの言語設定は普段から英語にしてある

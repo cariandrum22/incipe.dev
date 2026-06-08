@@ -1,0 +1,152 @@
+---
+title: "NixOSでCanon PIXUS XK70を使う"
+slug: "using-canon-pixus-xk70-with-nixos"
+description: "NixOS(Linux)でCanon製のプリンタであるPIXUS XK70を使う設定を行った．基本的に，macOS，iOS対応のネットワークプリンタはIPP EverywhereやApple AirPrintに代表されるドライバーレス印刷に対応しているため，AvahiとCUPSを構成すれば使うことが出来る．XK70はインクジェット複合機であるためスキャナも具備していることから，それも合わせてNixOSで使えるよう設定を行った．"
+publishedOn: "2023-01-02"
+tags: ["nixos","canon"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"1WtIEBE4Era9nSkta6W4Pl","contentType":"post","updatedAt":"2023-01-11T04:41:21.321Z"}
+---
+
+## 導入
+
+この2〜3年はmacOSやWindowsでしか出来ないことを除いて，基本的にLinuxを使用している．
+
+macOSやWindowsでしか出来ないことの代表が，国家行政組織が自治体行政組織に提出する文書を編集や印刷である．もちろん，それらの作業はLinux上のLibreOfficeで出来ないことはないのだが，だいたいこういったドキュメントはMicrosoft Officeをもまともに使えない連中によって作られているため，まずいスタイリングや不要なマクロなどが含まれており，多数のエラーや警告につきあう羽目になる．もちろん，印刷するとなればレイアウトの調整も必要になるだろう．いい加減，Word，Excel使うのやめてもらいたいものである．閑話休題．
+
+さて，印刷が必要となる作業は前述の通りLinux以外でやることがほとんどなので，Linux上でプリンタを使うための設定を入れていなかった訳だが，最近息子が頻繁に塗り絵の印刷を頻繁に要求してくるため，都度KVM SwitchでmacOSに切り替え印刷するというタスクが発生するようになった．
+
+ブラウザで塗り絵を検索して印刷するという作業ためだけに，macOSにスイッチするのも煩わしいので，年末年始休暇の今のうちにNixOSにプリンタとスキャナの設定を入れることにした．
+
+## インターネット老人の昔話
+
+Linuxでプリンタの設定など何年ぶりだろうか．
+
+昨今では家庭用プリンタも標準でプリントサーバ機能を持っており，WiFiとIPPに対応していることが多い．業務用製品は言うに及ばずである．となると，必然的にLinuxでプリントサーバを構成する必要もなくなり，CUPSを触ることもなくなった．
+
+この記事に記載したことは，正直あえて記事にするほどのものではまったくないのだが，なにか記録しておかないと，再び存在すら忘れるような気がしたので，自分のために残すものである．
+
+## NixOSでプリンタを設定する
+
+正直，[Printing - NixOS Wiki](https://nixos.wiki/wiki/Printing)を読めば終了であるのだ，それではこの記事の意味が全くないので，私の構成と設定を紹介する．
+
+### システム構成
+
+以下の構成で，NixOSから印刷とスキャンを行えるように設定をしていく．
+
+| Component        | Name             |
+| ---------------- | ---------------- |
+| Operating System | NixOS 22.10      |
+| Printer          | Canon PIXUS XK70 |
+| Connection       | WiFi             |
+
+### 印刷のための設定
+
+NixOSのWikiに`IPP everywhere capable printer`と記載があるとおり，IPP Everywareに対応したプリンタは，ドライバのインストール無しで使用することができる．
+
+これをLinuxで使用するためには，プリンタを検出するためのService Discoveryの実装である`Avahi`と，プリンティングシステムの実装である`CUPS`を使用する．
+
+これらのサービスを有効化するために，NixOSに以下のような設定を追加して，`nixos rebuild switch`を実行する．
+
+```nix
+{
+  services = {
+    avahi.enable = true;
+    printing.enable = true;
+  }
+}
+```
+
+これによってAvahiとCUPSが起動する．
+
+さて，サービスが無事に起動したら，プリンタをセットアップしていこう．
+
+CUPSは2000年7月にリリースされたv1.1の時点で，プリンタの基本的な管理を行うためのWebUIを備えており，これは標準でPort 631で待ち受けをする．
+
+nixpkgsの`services.printing`で実行されるCUPSは，デフォルトでこのWebUIが有効化されているため，これをそのまま使用してセットアップしてもよいのだが，私は普段Gtkベースのアプリケーションを使っているので，home-managerで`system-config-printer`もインストールすることにした．
+
+さて，system-config-printerがインストールできたらそれを起動し，`Add`ボタンを押下する．
+
+プリンタの追加画面に移動し少し待つと，Avahiによってプリンタが検出され`Netowrk Printer`の一覧に`Canon XK70`がでてくる．
+
+これを選択し，Connectionsから`IPP Network printer via DNS-SD`を選択して次へ進む．
+
+途中，`Printer Driver`の選択をする必要がある．
+
+Makesの一覧にCanonがないので，`Generc (recommended)`を選択し次に進むとDriverの選択画面となる．
+
+Modelsから`IPP Everywhere`，Driverから`Generic IPP Everywhere Printer`を選択し，次へ進む．
+
+任意のPriterの説明を入れて，Applyを実行．
+
+テストプリントの実行がプロンプトされるので，そのままPrint Test Pageを試みるが，Processingから先へ進まない．
+
+表示されているメッセージは以下の通り．
+
+```
+Processing - Unable to locate printer "4B0420000000.local".
+```
+
+どうやらAvahiの.localドメイン解決が出来ていないようだ．
+
+NixOSのservices.avahiには，[nss-mdnsプラグインを制御するnssmdnsオプションがあり，どうやらdefaultではfalse](https://search.nixos.org/options?channel=22.11&show=services.avahi.nssmdns&from=0&size=50&sort=relevance&type=packages&query=services.avahi.nssmdns)らしい．
+
+先立って追加したAvahiの設定を以下のように書き換える．
+
+```diff
+{
+  services = {
+    printing.enable = true;
+-   avahi.enable = true;
++   avahi = {
++     enable = true;
++     nssmdns = true;
++   };
+  };
+}
+```
+
+これをnixos-rebuild switchで反映してみると，__プリンタから無事テストページが印刷された__．
+
+さて，このままでも十分実用には耐えるが，CanonはLinux Driverも提供している．印刷をするだけであれば今のままでも十分なのだが，Driverを入れればプリントヘッドの清掃などの付加機能も使えるのため，せっかくなのでこれを導入したい．
+
+[search.nixos.org](https://search.nixos.org/)で調べた所，CanonのDriverは複数あるようなので，XK70に適合するDriverがどれなのかを確認する必要がある．
+
+Canonのサイトで調べた所，[IJ Printer Driver Ver. 5.50 for Linux](https://cweb.canon.jp/drv-upd/ij-mfp/linux-pd-20172h-550.html?_gl=1*klhfj*_ga*MTExNjIyNTY1LjE2NzI2NDU3NDY.*_ga_8YMT0CZD36*MTY3MjY1MDY4Mi4zLjEuMTY3MjY1MDcwOC4zNC4wLjA.)が対応するDriverのようだ．
+
+ソースファイルをダウンローすると`cnijfilter2-source-5.50-1.tar.gz`というファイルが落ちてきた．`cnijfilter2`をearch.nixos.orgでしらべたところ，一致するパッケージがあったので，それを追加する．
+
+```diff
+{
+  services = {
+-   printing.enable = true;
++   printing = {
++     enable = true;
++     drivers = with pkgs; [ cnijfilter2 ];
+    };
+    avahi = {
+      enable = true;
+      nssmdns = true;
+    };
+  };
+}
+```
+
+これをnixos-rebuild switchで反映すると，プリンタの管理画面からプリンターヘッドのクリーニングなどが実行できるようになった．
+
+## NixOSでスキャナを設定する
+
+つぎにスキャナを使えるようにする．
+
+Linux用のスキャナドライバといえばSANEだが，ほしいのはDriveではなく，スキャナを操作するためのUIである．
+
+私が使用しているWindow Managerは[xmonad](https://xmonad.org/)なのだが，GUIはGTKベースのものに揃えてある（これは気に入ったテーマがたまたまGTK3.0のものだったからである）ので，ここではGNOMEのドキュメントスキャナである[simple-scan](https://gitlab.gnome.org/GNOME/simple-scan)を導入することにした．
+
+nixpkgsでのパッケージ名は`gnome.simple-scan`なので，これをhome-managerに追加して，home-manager switchを実行した．
+
+さて，simple-scanはバックエンドにSANEを使用しており，SANEはsane-airscanによってドライバーレススキャンを実現している．これを使うためにはService Descoveryが必要だが，既にプリンタのためにAvahiを導入しているのでsimple-scanを起動すると自動的に`Canon XK70 series`が検出され，簡単にスキャンの実行ができた．
+
+## 最後に
+
+これで子供が仕事中に新しい塗り絵を求めてやってきても，Linux上から移動することなく対応が可能となった．

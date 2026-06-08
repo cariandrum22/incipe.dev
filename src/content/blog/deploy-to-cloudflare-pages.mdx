@@ -1,0 +1,99 @@
+---
+title: "Cloudflare Pagesへのデプロイ"
+slug: "deploy-to-cloudflare-pages"
+description: "新しいサイトの配備先にCloudflare Pagesを使うことに決めたのだが，PureScriptを使用するなど，一般的なGatsbyの構成ではないことに起因して，Cloudflare Pagesが提供してくれるビルドシステムをそのまま使うことができなかった．代替手段として，GitHub Actionsを使用したCI/CD環境を整備した．"
+publishedOn: "2022-06-01"
+tags: ["github actions","cloudflare pages","nix"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"4IzhemcxwguHtu6bCaHIKR","contentType":"post","updatedAt":"2022-07-20T11:50:59.852Z"}
+---
+
+## 導入
+
+新しくサイトを作るにあたって，どこに公開するかを考える必要があった．
+
+Amazon S3, Google Cloud Storage, Azure Blobでの静的サイトホスティングは正直飽きるほどやってきているので，今回は違うものを使いたい．
+JAM Stackのホスティングというと，[Netlify](https://www.netlify.com/)，[Vercel](https://vercel.com/)，[Cloudflare Pages](https://pages.cloudflare.com/)あたりが候補になるだろうか．
+
+Netlifyは使ったことがあるので，VercelかCloudflare Pagesあたりが選択肢にあがるのだが，Cloudflare Pagesの評判をよく聞くので，今回はこれを使ってみようとおもった．
+
+## Cloudflare Pagesへのデプロイ
+
+Cloudflare Pagesへのアップロード手段は3つある．
+
+1. GitHub Repositoryとの連携
+2. 直接ファイルアップロード
+3. Wranglerを使用したCLIでのアップロード
+
+もちろん，最初は1.の方式を考えたのだが，私の構成ではうまく動かず，最終的に3.を採用した．
+PureScriptの存在が問題になったのである．
+
+### 課題
+
+PureScriptコンパイラである`purescript`とそのビルドシステムである`spago`はHaskellで書かれており，npmからインストールする場合は，基本的にコンパイル済みのバイナリが提供される．
+
+Cloudflare Pagesは[ビルド環境としてNodeJSのランタイムが提供されており](https://developers.cloudflare.com/pages/platform/build-configuration/)，npmを使用した依存関係の解決と，ビルドを単体で実行することができる．
+
+これならば，単にnpmの依存関係にpurescriptとspagoが追加されていればいいように思えるが，私はNixOSを使っている都合から，npmでバイナリが提供されているツールをローカルそのまま活用することができない．
+
+そのため，purescriptとspagoはnix経由で導入している．
+
+nixには，周辺ツールを含めたビルド環境そのものを宣言的に定義し，パッケージに含めることが出来るという大きな利点が有る一方で，ビルドを行う際は常にnixが必要となる．
+
+今回のCloudflare Pagesのように，実行環境のカスタマイズができないプラットフォームでは，そもそもビルドする手段がなくなってしまうのだ．
+
+とはいえ，毎回手動デプロイというのはエンジニアとしてどうなのだろう．GitHubへのPushをトリガーにして継続的デリバリが出来る環境は欲しい．ということで，[GitHub Actions](https://github.co.jp/features/actions)を使うことにした．
+
+### 解決
+
+GitHub Actionsであれば，カスタムランナーを作ることができるので，大体のケースに対応できる．
+幸いにもMarketplaceに[Install Nix](https://github.com/marketplace/actions/install-nix)というActionが存在したので，ビルドの問題はあっさり解決することができた．
+
+最終的なワークフローファイルは以下の通りである．
+
+```yaml
+on:
+      push:
+branches:
+  - main
+    jobs:
+      deploy:
+runs-on: ubuntu-latest
+permissions:
+  contents: read
+  deployments: write
+name: Deploy to Cloudflare Pages
+steps:
+  - name: Checkout
+    uses: actions/checkout@v2
+  - name: Install Nix
+    uses: cachix/install-nix-action@v15
+    with:
+      extra_nix_config: |
+        access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+  - name: Build
+    env:
+      CONTENTFUL_SPACE_ID: ${{ secrets.CONTENTFUL_SPACE_ID }}
+      CONTENTFUL_ACCESS_TOKEN: ${{ secrets.CONTENTFUL_ACCESS_TOKEN }}
+      HASURA_ADMIN_SECRET: ${{ secrets.HASURA_ADMIN_SECRET }}
+      GOOGLE_TAGMANAGER_ID: ${{ secrets.GOOGLE_TAGMANAGER_ID }}
+      GOOGLE_TAGMANAGER_AUTH: ${{ secrets.GOOGLE_TAGMANAGER_AUTH }}
+      GOOGLE_TAGMANAGER_PREVIEW: ${{ secrets.GOOGLE_TAGMANAGER_PREVIEW }}
+    run: |
+      nix develop -c npm install
+      nix develop -c npm run build
+  - name: Publish
+    uses: cloudflare/wrangler-action@2.0.0
+    with:
+      accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      command: pages publish --project-name=incipe-dev public
+```
+
+npmのビルド自体をnixでやるのは面倒だったので，開発用のシェル環境（devShell）内で依存関係の解決とビルドを行っている．これはnix-shell内部でないと，purescriptとspagoへの参照が存在しないためである．
+
+Cloudflare PagesへのデプロイはWrangler CLIで行っている．
+これも，Marketplaceに[Deploy to Cloudflare Workers with Wrangler](https://github.com/marketplace/actions/deploy-to-cloudflare-workers-with-wrangler)というCloudflare公式のActionが存在したので，それをそのまま使っただけである．
+
+これでmainリポジトリへのpush毎に自動ビルドとデプロイが動くようになった．

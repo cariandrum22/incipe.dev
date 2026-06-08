@@ -1,0 +1,152 @@
+---
+title: "NixOSでSIP Phoneを使う"
+slug: "using-sip-phone-on-nixos"
+description: "自社でAsteriskの運用をしている都合から，テストのためのSIP対応のソフトフォンが必要となった．これまではmacOS上でZoiperを使用してきたのだが，NixOS上にはソフトフォンをなにも入れていなかったので，使ったことがないjamiを使ってみることにした．公式でパッケージングされたものではないことに起因すると思われるマイナーな問題があったが，無事内線と外線のテストに使うことができた．"
+publishedOn: "2023-01-07"
+tags: ["nixos","jami","sip"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"5djnJwWfUMgVFIte5rcDtJ","contentType":"post","updatedAt":"2023-01-11T07:03:48.331Z"}
+---
+
+## 導入
+
+私が現在役員を務めている[codeTakt Inc.](https://codetakt.com/)では，会社の電話システムを[Asterisk](https://www.asterisk.org/)を中心としたIP-PBXでホストしている．
+
+これはcodeTaktが創業当時からフルリモートを推進している企業であることから，__0ABJ番号は必要だが固定電話は不要__という組織であるためである．
+
+創業当時はニフティが提供するShaMo!という法人向けIP電話サービスを使用していたが，このサービスは
+
+- 通話が突然頻繁に切れる
+- 電話番号の移転が不可能
+
+などという法人で使用する通信システムとしてかなり信頼性を欠くものであったことから，いずれ移転を考えていたのだが，当該サービスの終了と本社移転を契機として，[Rakuten CommunicationsのIP電話サービス](https://comm.rakuten.co.jp/houjin/asterisk_ip/) + 自前ホストのAsteriksという構成に変更した．
+
+社内コミュニケーションは基本的にSlackを使っていることから，IP-PBXをが必要となるのは代表電話番号を使用するときか，営業や顧客対応をする社員用のダイアルインを使うときくらいなのだが，私はAsteriskの運用をしている都合から通信テストのためにSIP対応のソフトフォンが必要となる．
+
+これまではmacOS上で[Zoiper](https://www.zoiper.com/)を使用してきたのだが，[jami](https://jami.net/)の評判が良さそうなので，これをNixOSに入れてつかってみることにした．
+
+## 構成
+
+jamiは[様々なディストリビューション用のパッケージとsnapパッケージを提供](https://jami.net/download-jami-linux/)しているが，当然そのままNixOSでは使えない．
+
+[search.nixos.org](https://search.nixos.org/)で検索してみると，[Qtのクライアント](https://search.nixos.org/packages?channel=22.11&show=jami-client-qt&from=0&size=50&sort=relevance&type=packages&query=jami)と[deamon](https://search.nixos.org/packages?channel=22.11&show=jami-daemon&from=0&size=50&sort=relevance&type=packages&query=jami)が見つかった．
+
+以前の22.05では[gnome(GTK)のクライアント](https://search.nixos.org/packages?channel=22.05&show=jami-client-gnome&from=0&size=50&sort=relevance&type=packages&query=jami)もあったようなのだが，22.11では消えていた．理由は追っていないが，別にGTKじゃないと嫌というわけでもないので，このQtのクライアントを使っていく．
+
+私はdotfilesやユーザ環境の構成管理に[home-manager](https://github.com/nix-community/home-manager)を使っているので，home-managerのhome.packages属性に`jami-client-qt`を追記し，`home-manager switch`を実行した．
+
+## Error : jamid is not available, make sure it is running
+
+早速つかってみようと，ランチャである[rofi](https://github.com/davatorium/rofi)からjamiを呼び出すが，一向に起動してこない．プロセスを確認したところ影も形もないため「落ちた？」と思ってshellから呼び出してみると，たしかにエラーを吐いて落ちていた．
+
+```shell
+$ jami
+Using Qt runtime version: 6.4.1
+
+(jami-qt:33271): libnotify-WARNING **: 13:55:01.926: Failed to connect to proxy
+qt.webenginecontext:
+
+GL Type: desktop
+Surface Type: OpenGL
+Surface Profile: CompatibilityProfile
+Surface Version: 4.6
+QSG RHI Backend: OpenGL
+Using Supported QSG Backend: yes
+Using Software Dynamic GL: no
+Using Multithreaded OpenGL: yes
+
+Init Parameters:
+  *  application-name Jami
+  *  browser-subprocess-path /nix/store/f7nfb9wf5ccswmdpacg1zl4qgjwdka53-qtwebengine-6.4.1/libexec/QtWebEngineProcess
+  *  create-default-gl-context
+  *  disable-features ConsolidatedMovementXY,InstalledApp,BackgroundFetch,WebOTP,WebPayments,WebUSB,PictureInPicture
+  *  disable-setuid-sandbox
+  *  disable-speech-api
+  *  enable-features NetworkServiceInProcess,TracingServiceInProcess
+  *  enable-threaded-compositing
+  *  in-process-gpu
+  *  use-gl desktop
+
+"Using locale: en_US"
+"Error : jamid is not available, make sure it is running"
+terminate called after throwing an instance of 'char const*'
+Received signal 6
+#0 0x7f3557ba2229 base::debug::CollectStackTrace()
+#1 0x7f3557af3c76 base::debug::StackTrace::StackTrace()
+#2 0x7f3557ba1c13 base::debug::(anonymous namespace)::StackDumpSignalHandler()
+#3 0x7f355063dbf0 (/nix/store/9xfad3b5z4y00mzmk2wnn4900q0qmxns-glibc-2.35-224/lib/libc.so.6+0x3dbef)
+#4 0x7f355068abc7 __pthread_kill_implementation
+#5 0x7f355063db46 __GI_raise
+#6 0x7f35506284b5 __GI_abort
+#7 0x7f3550aa996a _ZN9__gnu_cxx27__verbose_terminate_handlerEv.cold
+#8 0x7f3550ab4f9a __cxxabiv1::__terminate()
+#9 0x7f3550ab5005 std::terminate()
+#10 0x7f3550ab5258 __cxa_throw
+#11 0x00000045aeeb _ZN10Interfaces23DBusErrorHandlerDefault15connectionErrorERK7QString.cold
+#12 0x00000060667b ConfigurationManager::instance()
+#13 0x0000005f426e lrc::CallbacksHandler::CallbacksHandler()
+#14 0x0000005dd0be lrc::LrcPimpl::LrcPimpl()
+#15 0x0000005dd229 lrc::api::Lrc::Lrc()
+#16 0x000000508117 LRCInstance::LRCInstance()
+#17 0x0000004a45fc MainApplication::initLrc()
+#18 0x0000004a4a06 MainApplication::init()
+#19 0x00000045e72d main
+#20 0x7f355062924e __libc_start_call_main
+#21 0x7f3550629309 __libc_start_main_alias_2
+#22 0x000000463b95 _start
+  r8: 0000000001ccc4f0  r9: 00007ffee3aa3b90 r10: 0000000000000008 r11: 0000000000000246
+ r12: 0000000001abbb90 r13: 0000000000000000 r14: 0000000000000006 r15: 0000000001ccc2d0
+  di: 00000000000081f7  si: 00000000000081f7  bp: 00007f3550b9952c  bx: 00000000000081f7
+  dx: 0000000000000006  ax: 0000000000000000  cx: 00007f355068abc7  sp: 00007ffee3aa3f90
+  ip: 00007f355068abc7 efl: 0000000000000246 cgf: 002b000000000033 erf: 0000000000000000
+ trp: 0000000000000000 msk: 0000000000000000 cr2: 0000000000000000
+[end of stack trace]
+fish: Job 1, 'jami' terminated by signal SIGABRT (Abort)
+```
+
+なるほど．`jamid`が起動していないといけないらしい．
+
+### 原因
+
+エラーの通り，jami-clientはjamidが起動していることを期待しているようだ．nixpkgsにあるjami-daemonを入れれば解決しそうである．
+
+再びhome-managerのhome.packages属性に`jami-daemon`を追記し，`home-manager switch`を実行した．
+
+無事daemonが入ったようなので，再度shellからjamiを呼び出してみるも，__また同じエラー__である．なるほど，packages属性で入れただけなので，自動で立ち上がったりはしないのが道理である．
+
+ではservicesにjamiはないのかと調べてみた所，[そもそもjamiで引っかかるオプションが何もなかった](https://search.nixos.org/options?channel=22.11&from=0&size=50&sort=relevance&type=packages&query=jami)．
+
+なにか良い方法はないかとエラーメッセージで検索した見た所，jamiのフォーラムに[そのまま答え](https://forum.jami.net/t/on-parabola-jami-crashes-upon-startup/1386)が書いてあった．
+
+### 対応
+
+フォーラムにあったソリューションは以下の2つである．
+
+- jamidを起動してから，client-qtを起動する
+- libwrapを使用して単一バイナリにする
+
+そこまで頻繁に使うものではないので，先に手動でjamidを起動してから使うようにしよう．libwrapはやりすぎなき気もするが，面倒ならスクリプトでラップ程度はしても良いかもしれない．
+
+早速jamidを起動してみようとしたが，`command not found`になってしまう．
+
+```shell
+$ ➜ jamid                                                 
+jamid: command not found
+```
+
+home-manager switchは正常に完了しているはずなのに，なぜだろうか．
+
+locateで調べてみると，答えは簡単で，jamidのバイナリへのシンボリックリンクは`~/.nix-profile/libexec/jamid`に作られているが，ここへのPATHが存在しないためである．
+
+つまり，~/.nix-profile/libexecへのPATHを通すか，直接叩いてやれば良い．
+
+私は今のところlibexecのバイナリを直接実行する必要があるのはjamidだけなので，直接実行することにした．
+
+~/.nix-profile/libexec/jamidを実行し，daemonが立ち上がった後，jami(client)を実行すると，正常にGUIが立ち上がった．
+
+あとは適当にGUIから自分のSIPアカウントを登録し，ホストしているAsteriskに接続すると，内線および外線の発着呼が正常に確認できた．
+
+## 最後に
+
+前述の通り，日常的な業務上のコミュニケーションは基本的にSlackで行われるので，ソフトフォンを使う機会はあまり多くないのだが，しばらく電話システムのテストにはjamiを使ってみようとおもう．

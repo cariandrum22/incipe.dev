@@ -1,0 +1,77 @@
+---
+title: "picomでWindowの透過を無効にする"
+slug: "disable-window-transparency-with-picom"
+description: "以前からCompositorとしてpicomを使用してWindowsの透過設定をしている．\n 今回，VS Code Insidersを導入したのだが，エディタが透過するのは個人的に何も嬉しくないので透過しないように調整をしたいと考えた．\nこういった修正は頻繁にやらないので，透過率を割り当てるためのアプリケーションのWindow Manager Classを調べるのに少し余計な時間を使ってしまった．次回以降の時間節約のために，備忘として記事に残すことにした．"
+publishedOn: "2023-07-27"
+tags: ["linux","picom"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"5rQwPCQ2o9ch3rnKMmHkmz","contentType":"post","updatedAt":"2023-08-07T04:43:41.588Z"}
+---
+
+## 導入
+
+私はコンポジット型ウィンドウマネージャであるpicomを使用し，Windowsに`inactiveOpacity`を設定している．
+
+タイル型ウィンドウマネージャであるXMonadを使うようになってから，ウィンドウの重なりを意識する機会はかなり減ったのだが，ウィンドウが非アクティブのときに透過が強く設定されていると便利なことがあるからだ．
+
+一方，エディタやブラウザなどは非アクティブ状態であっても文字がくっきり読めないと困る．
+
+そこで，選択的にOpacityを無効にするためにpicomに`opecity-rule`を設定している．picomでopecity-ruleを適用するためには，その適用する対象となるウィンドウプロパティを指定する必要がある．
+
+この設定は一度すると，普段から頻繁にいじるものじゃないため，私はよくアプリケーションのウィンドウプロパティの調査方法を忘れてしまう．
+
+過去にも何度か同じことを検索して時間を無駄に使ったような気がするので，備忘のために記事として残しておくことにした．
+
+## VS Code Insidersが透過しないようにする
+
+### WM_CLASSの調査
+
+前述の通り，picomのopacity-ruleaを適用するためには，対象を識別するためにWindow Propertyを必要とする．
+
+`WM_CLASS`プロパティは__インスタンスを示す文字列__と__クラスを示す文字列__を__カンマ区切りで保持する文字列__である．
+
+同一のアプリケーションから起動されたウィンドウであれば，WM_CLASSプロパティに同じ値が入っていることを期待できるため，あるアプリケーションが保持するウィンドウすべてにルールを適用したい場合に便利である．
+
+私は毎回この
+
+- WM_CLASSプロパティのクラスを使用してアプリケーションが開くウィンドウを識別する
+- WM_CLASSプロパティのクラスを取得する方法
+
+を忘れるてしまう．
+
+閑話休題．
+
+さて，展開しているWindowからWindow Propertyを調べるには`xprop`コマンドを使う．
+
+これは実行後，最初にマウスポインタでクリックしたWindow Propertyを出力してくれる．
+
+ウィンドウプロパティは複数有るわけだが，今回確認したいのはWM_CLASSだけなのでgrepしておこう．
+
+```shell
+$ xprop | grep WM_CLASS
+```
+
+コマンドの実行後，プロンプトは待機状態となる．その状態でWM_CLASSを知りたいウィンドウをクリックすると，ターミナルにプロパティが出力される．今回は起動しているVS Code Insidersのウィンドウをアクティブにした．
+
+```
+$ xprop | grep WM_CLASS                                                   
+WM_CLASS(STRING) = "code - insiders", "Code - Insiders
+```
+
+このプロパティは，前述の通りインスタンス名とクラス名をカンマ区切りで保持している．今回使用するのはクラス名なので，後者をつかってopacity-ruleを書く．
+
+### picomの設定
+
+クラス名がわかったので，設定をつくる．
+
+```text
+opacity-rule = [ 
+  "100:class_g = 'Code - Insiders' && focused",
+  "100:class_g = 'Code - Insiders'
+];
+```
+
+これを`~/.config/picom/picom.conf`に追加して，picom.serviceを再起動する．
+
+無事にVS Code Insidersが透過しなくなった．

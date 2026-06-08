@@ -1,0 +1,533 @@
+---
+title: "home-manager管理下でVisual Studio Code Insidersを使う"
+slug: "using-visual-studio-code-insiders-under-home-manager"
+description: "GitHub Copilot ChatのLimited Public Betaを試そうとしたが，GitHub Copilot ChatのExtensionはVS Codeのバージョンとして1.81.0以上を要求する．\nこれを書いている現在，最新のStableは1.80.1であるため，Insiders Buildを使用する必要がある．Insiders Buildの導入はNixOS Wikiでも方法が紹介されているので，インストールするだけであれば特段難しいことはなかったのだが，home-managerでVS Code Insiders Buildを導入し問題なく動作させるまでにそこそこのYak Shavingが必要だった．"
+publishedOn: "2023-07-27"
+tags: ["vscode","nixos","home-manager"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"78PQ3AKWiIM7RjPHaF4M0f","contentType":"post","updatedAt":"2024-05-18T10:46:33.007Z"}
+---
+
+## TL;DR
+
+以下のNix式をhome-managerから適用することで
+
+- GitHubログイン時にVS CodeではなくVS Code Insidersにリダイレクトされる
+- OS Keyring(libsecret)が使用可能
+
+なVS Code Insidersの最新配布バイナリがインストールされる．
+
+```nix
+{
+  programs.vscode = {
+    enable = true;
+    package = (pkgs.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
+      pname = "vscode-insiders";
+      version = "1.81.0";
+      src = (builtins.fetchTarball {
+        url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
+        sha256 = "18la3h19fkla33xrmhqpr752jhs6p6w8i8z8ag39izblqyr46pf7";
+      });
+      buildInputs = oldAttrs.buildInputs ++ [ pkgs.libkrb5 ];
+      runtimeDependencies = lib.optionals pkgs.stdenv.isLinux (oldAttrs.runtimeDependencies ++ [ pkgs.libsecret ]);
+      urlHandlerDesktopItem = pkgs.makeDesktopItem {
+        name = "code-insiders-url-handler";
+        desktopName = "Visual Studio Code - Insiders - URL Handler";
+        comment = "Code Editing. Redefined.";
+        genericName = "Text Editor";
+        exec = "code-insiders" + " --open-url %U";
+        icon = "code";
+        startupNotify = true;
+        categories = [ "Utility" "TextEditor" "Development" "IDE" ];
+        mimeTypes = [ "x-scheme-handler/${pname}" ];
+        keywords = [ "vscode" ];
+        noDisplay = true;
+      };
+    });
+  };
+}
+```
+
+このNix式はあくまでLinux環境で動作するものなので，macOSでもhome-managerを使っている身としては，macOS使えるようにした．コードは[私のGitHubリポジトリ](https://github.com/cariandrum22/dotfiles/blob/ff69fa8e493c7747b3f1716435771c80655cb4c7/config/home-manager/programs/vscode/default.nix)にある．\[2023年8月7日追記\]
+
+## 導入
+
+GitHub Copilot ChatのLimited Public Betaが試せるようになったので早速使ってみようと思ったところ，当該ExtensionがVSCodeのVersion 1.81.0以上を要求してきた．
+
+nixpkgsのunstable channelにあるのは1.80.1だったので，まだパッケージ化されていないのかと思い，VS Codeの公式を見に行ったところ，最新は1.80.1だった．
+
+1.81.xはどこにあるのだろうか．と思ったら，どうやらVS Code Insidersなるものがあるらしい．
+
+これをhome-managerで入れてみよう．
+
+## VS Code Insidersをhome-managerからインストールする
+
+さて，どうやろうか．まずは，先人が試していることがないかを調べてみると，普通にNixOS WikiのVS Codeのページに[Insiders Build](https://nixos.wiki/wiki/Visual_Studio_Code#Insiders_Build)の項があった．すばらしい．
+
+早速いれてみよう．以下のNix式を用意した．
+
+```nix
+{
+  programs.vscode = {
+    enable = true;
+    package = (pkgs.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
+      src = (builtins.fetchTarball {
+        url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
+        sha256 = "18la3h19fkla33xrmhqpr752jhs6p6w8i8z8ag39izblqyr46pf7";
+      });
+      version = "latest";
+    });
+  };
+}
+```
+
+前述の通り，私はhome-managerを使用しているので，上記のようなNix式を用意した．
+
+このURLは常に64bit Linux向けの最新のInsidersビルドが配布されているので，sha256は適宜変更する必要がある．
+
+早速`home-manager switch`してみよう．
+
+```shell
+$ home-manager switch
+[...]
+auto-patchelf: 8 dependencies could not be satisfied
+error: auto-patchelf could not satisfy dependency libkrb5.so.3 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules.asar.unpacked/kerberos/build/Release/kerberos.node
+error: auto-patchelf could not satisfy dependency libgssapi_krb5.so.2 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules.asar.unpacked/kerberos/build/Release/kerberos.node
+error: auto-patchelf could not satisfy dependency libkrb5.so.3 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules.asar.unpacked/kerberos/build/Release/obj.target/kerberos.node
+error: auto-patchelf could not satisfy dependency libgssapi_krb5.so.2 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules.asar.unpacked/kerberos/build/Release/obj.target/kerberos.node
+error: auto-patchelf could not satisfy dependency libkrb5.so.3 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules/kerberos/build/Release/kerberos.node
+error: auto-patchelf could not satisfy dependency libgssapi_krb5.so.2 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules/kerberos/build/Release/kerberos.node
+error: auto-patchelf could not satisfy dependency libkrb5.so.3 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules/kerberos/build/Release/obj.target/kerberos.node
+error: auto-patchelf could not satisfy dependency libgssapi_krb5.so.2 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules/kerberos/build/Release/obj.target/kerberos.node
+auto-patchelf failed to find all the required dependencies.
+Add the missing dependencies to --libs or use `--ignore-missing="foo.so.1 bar.so etc.so"`.
+/nix/store/91hwyc6c4r474zs56n9idbqj17dlcnna-stdenv-linux/setup: line 89: pop_var_context: head of shell_variables not a function context
+/nix/store/91hwyc6c4r474zs56n9idbqj17dlcnna-stdenv-linux/setup: line 1467: pop_var_context: head of shell_variables not a function context
+/nix/store/91hwyc6c4r474zs56n9idbqj17dlcnna-stdenv-linux/setup: line 1604: pop_var_context: head of shell_variables not a function context
+error: builder for '/nix/store/jqgfpi1xw5raz8i9hwp8cygzfxlc41p0-vscode-insiders-1.81.0.drv' failed with exit code 1;
+       last 10 log lines:
+       > error: auto-patchelf could not satisfy dependency libgssapi_krb5.so.2 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules.asar.unpacked/kerberos/build/Release/obj.target/kerberos.node
+       > error: auto-patchelf could not satisfy dependency libkrb5.so.3 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules/kerberos/build/Release/kerberos.node
+       > error: auto-patchelf could not satisfy dependency libgssapi_krb5.so.2 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules/kerberos/build/Release/kerberos.node
+       > error: auto-patchelf could not satisfy dependency libkrb5.so.3 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules/kerberos/build/Release/obj.target/kerberos.node
+       > error: auto-patchelf could not satisfy dependency libgssapi_krb5.so.2 wanted by /nix/store/glb9gw78ingnswawiavnxpv4wf49325c-vscode-insiders-1.81.0/lib/vscode/resources/app/node_modules/kerberos/build/Release/obj.target/kerberos.node
+       > auto-patchelf failed to find all the required dependencies.
+       > Add the missing dependencies to --libs or use `--ignore-missing="foo.so.1 bar.so etc.so"`.
+       > /nix/store/91hwyc6c4r474zs56n9idbqj17dlcnna-stdenv-linux/setup: line 89: pop_var_context: head of shell_variables not a function context
+       > /nix/store/91hwyc6c4r474zs56n9idbqj17dlcnna-stdenv-linux/setup: line 1467: pop_var_context: head of shell_variables not a function context
+       > /nix/store/91hwyc6c4r474zs56n9idbqj17dlcnna-stdenv-linux/setup: line 1604: pop_var_context: head of shell_variables not a function context
+       For full logs, run 'nix log /nix/store/jqgfpi1xw5raz8i9hwp8cygzfxlc41p0-vscode-insiders-1.81.0.drv'.
+error: 1 dependencies of derivation '/nix/store/1c7y209c97g8xdy23841ql4xrs3z3fvm-home-manager-path.drv' failed to build
+error: 1 dependencies of derivation '/nix/store/9pqwcdynf2wjy01233c8ycx05bad6kn5-home-manager-generation.drv' failed to build
+```
+
+依存関係の解決に失敗している．
+
+見たまんまKerberos関連のシェアードオブジェクトを要求しているようだが，最近Kerberosのサポートが追加されたのだろうか．と調べてみると確かに1.81.0で[ProxyのためののKerberos認証サポートが追加された](https://github.com/microsoft/vscode/commit/6ae441b56fc9ca54b53a4d38810619f326b56bec)ようである．
+
+overrideでkrb5への依存関係を追加しよう．
+
+```nix
+{
+  programs.vscode = {
+    enable = true;
+    package = (pkgs.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
+      src = (builtins.fetchTarball {
+        url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
+        sha256 = "18la3h19fkla33xrmhqpr752jhs6p6w8i8z8ag39izblqyr46pf7";
+      });
+      version = "latest";
+      buildInputs = oldAttrs.buildInputs ++ [ pkgs.libkrb5 ];
+    });
+  };
+}
+```
+
+これで無事にビルドされ，VS CodeのInsidersビルドが使用できるようになった．
+
+## トラブルシューティング
+
+残念ながら，すぐにGitHub Copilot Chatを試すことはできなかった．
+
+以下に，私が遭遇した問題とその対応について記載しておく．
+
+### Extensionが反映されない
+
+早速起動してみたが，見慣れたテーマやキーバインドがデフォルトになっていた．どうやら，Extensionsが正常に反映されていないようだ．当然，GitHub Copilot　Chatも読み込まれていない．
+
+先に例示したNix式には記載していなかったが，私は`program.vscode.extensions`変数を使用して，home-managerでVS CodeのExtensionを管理している．
+
+home-manager switchが正常に完了しているにも関わらず，Extensionが導入されていないのはなぜだろうか．
+
+まず，home-manager側の[programs.vscodeモジュール](https://github.com/nix-community/home-manager/blob/ba2c0737cc848db03470828fdb5e86df75ed42a8/modules/programs/vscode.nix)を見てみる．
+
+なるほど．program.vscode.extensionsのインストール先は，`$HOME`下の`extensionDir` 変数の値になるわけだが，これがパッケージのpname変数の値によって`vscode`, `vscode-insiders`, `vscode-oss`のいずれかに設定されるようである．
+
+インストールに使用したNix式でoverrideしていたのはsrc, version, buildInputsだけであるため，pnameはデフォルトのvscodeのままだ．
+
+Insidersビルドはextensionsが$HOME/.vscode-insidersにあることを期待しているようなので，pnameもoverrideしてみよう．
+
+```nix
+{
+  programs.vscode = {
+    enable = true;
+    package = (pkgs.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
+      pname = "vscode-insiders"
+      src = (builtins.fetchTarball {
+        url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
+        sha256 = "18la3h19fkla33xrmhqpr752jhs6p6w8i8z8ag39izblqyr46pf7";
+      });
+      version = "latest";
+      buildInputs = oldAttrs.buildInputs ++ [ pkgs.libkrb5 ];
+    });
+  };
+}
+```
+
+さっそく再びhome-manager switchを実行し，ビルドと世代の切り替えに成功した．
+
+`$HOME/.vscode-insiders`をlsしてみると，期待通りextensionsが配備されていた．
+
+早速VS Codeを起動してみるが，状況は変わらず，Extensionは読み込まれていない．なぜだろうか．
+
+VS CodeのOutputを見てみる．
+
+```text
+[...]
+2023-07-26 16:33:21.577 [info] Started initializing default profile extensions in extensions installation folder. file:///home/<user>/.vscode-insiders/extensions
+2023-07-26 16:33:22.231 [error] Error: Unable to write file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json' (Unknown (FileSystemError): Error: EROFS: read-only file system, open '/home/<user>/.vscode-insiders/extensions/extensions.json')
+    at o.writeFile (vscode-file://vscode-app/nix/store/551czsirm03m25ynlm1m6dlylzd9ba7v-vscode-insiders-latest/lib/vscode/resources/app/out/vs/workbench/workbench.desktop.main.js:627:14601)
+    at async Object.factory (vscode-file://vscode-app/nix/store/551czsirm03m25ynlm1m6dlylzd9ba7v-vscode-insiders-latest/lib/vscode/resources/app/out/vs/workbench/workbench.desktop.main.js:757:23453)
+2023-07-26 16:33:22.326 [error] Error: Unable to read file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json' (Error: Unable to resolve nonexistent file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json')
+    at Object.factory (/nix/store/551czsirm03m25ynlm1m6dlylzd9ba7v-vscode-insiders-latest/lib/vscode/resources/app/out/vs/code/node/sharedProcess/sharedProcessMain.js:82:84755)
+2023-07-26 16:33:22.338 [error] Error: Unable to read file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json' (Error: Unable to resolve nonexistent file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json')
+    at Object.factory (/nix/store/551czsirm03m25ynlm1m6dlylzd9ba7v-vscode-insiders-latest/lib/vscode/resources/app/out/vs/code/node/sharedProcess/sharedProcessMain.js:82:84755)
+2023-07-26 16:33:22.341 [error] Error scanning user extensions: Unable to read file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json' (Error: Unable to resolve nonexistent file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json')
+2023-07-26 16:33:22.463 [error] Error: Unable to read file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json' (Error: Unable to resolve nonexistent file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json')
+    at Object.factory (/nix/store/551czsirm03m25ynlm1m6dlylzd9ba7v-vscode-insiders-latest/lib/vscode/resources/app/out/vs/code/node/sharedProcess/sharedProcessMain.js:82:84755)
+2023-07-26 16:33:22.663 [error] Unable to read file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json' (Error: Unable to resolve nonexistent file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json'): Error: Unable to read file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json' (Error: Unable to resolve nonexistent file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json')
+    at Object.factory (/nix/store/551czsirm03m25ynlm1m6dlylzd9ba7v-vscode-insiders-latest/lib/vscode/resources/app/out/vs/code/node/sharedProcess/sharedProcessMain.js:82:84755)
+2023-07-26 16:33:23.138 [error] Error: Unable to read file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json' (Error: Unable to resolve nonexistent file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json')
+    at Object.factory (/nix/store/551czsirm03m25ynlm1m6dlylzd9ba7v-vscode-insiders-latest/lib/vscode/resources/app/out/vs/code/node/sharedProcess/sharedProcessMain.js:82:84755)
+2023-07-26 16:33:24.245 [error] Error: Unable to read file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json' (Error: Unable to resolve nonexistent file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json')
+    at Object.factory (/nix/store/551czsirm03m25ynlm1m6dlylzd9ba7v-vscode-insiders-latest/lib/vscode/resources/app/out/vs/code/node/sharedProcess/sharedProcessMain.js:82:84755)
+2023-07-26 16:33:24.253 [error] Unable to read file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json' (Error: Unable to resolve nonexistent file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json'): Error: Unable to read file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json' (Error: Unable to resolve nonexistent file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json')
+    at Object.factory (/nix/store/551czsirm03m25ynlm1m6dlylzd9ba7v-vscode-insiders-latest/lib/vscode/resources/app/out/vs/code/node/sharedProcess/sharedProcessMain.js:82:84755)
+2023-07-26 16:33:24.255 [error] Error: Unable to read file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json' (Error: Unable to resolve nonexistent file 'vscode-userdata:/home/<user>/.vscode-insiders/extensions/extensions.json')
+    at Object.factory (/nix/store/551czsirm03m25ynlm1m6dlylzd9ba7v-vscode-insiders-latest/lib/vscode/resources/app/out/vs/code/node/sharedProcess/sharedProcessMain.js:82:84755)
+2023-07-26 16:33:24.461 [info] [perf] Render performance baseline is 50ms
+[...]
+```
+
+なるほど．**extensions.jsonが無い**のか．
+
+再びhome-managerの[programs.vscodeモジュール](https://github.com/nix-community/home-manager/blob/ba2c0737cc848db03470828fdb5e86df75ed42a8/modules/programs/vscode.nix)を見てみる．
+
+なるほど．extensions.jsonが作られるためには，[vscodeVersion変数の値が"1.74.0"以上でなければならない](https://github.com/nix-community/home-manager/blob/ba2c0737cc848db03470828fdb5e86df75ed42a8/modules/programs/vscode.nix#L271C24-L271C24)ようだ．
+
+vscodeVersion変数は，パッケージのversion変数の値を束縛しているので，versions属性を現在の**文字列latest**ではなく，**lib.versionAtLeast関数が1.74.0以上と評価できるバージョン番号**にすれば良さそうだ．
+
+```nix
+{
+  programs.vscode = {
+    enable = true;
+    package = (pkgs.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
+      pname = "vscode-insiders";
+      version = "1.81.0";
+      src = (builtins.fetchTarball {
+        url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
+        sha256 = "18la3h19fkla33xrmhqpr752jhs6p6w8i8z8ag39izblqyr46pf7";
+      });
+      buildInputs = oldAttrs.buildInputs ++ [ pkgs.libkrb5 ];
+    });
+  };
+}
+```
+
+これでhome-manager switchを実行後，VS Codeを起動すると無事にExtensionsが読み込まれた．
+
+### GitHubへのサインイン
+
+無事Extensionsが読み込まれたので，今度こそGitHub Copilot Chatを試用しようとしたところ，GitHubへのサインインを要求された．
+
+サインインボタンを押下すると，ブラウザに遷移しOAuthが実行されたあとアプリケーションにリダイレクトされる．
+
+![xdg-open dialog after GitHub authentication on Google Chrome](//images.ctfassets.net/krl0y7jst2eo/7fjVudvnKeYdKcxLgzsP2y/c89be2cd8000544e42ab03db52f837d1/2023-07-27_22-24.png)
+
+ここで，`Open xdg-open`ボタンを押下したにも関わらず，VS Codeに結果が戻ってこない．
+
+![Authentication waiting dialog in VS Code](//images.ctfassets.net/krl0y7jst2eo/6IuijCcjb7tnYhd8q6oBfl/ac153a36e80530f09d56fb48c4fc3d90/2023-07-27_22-25.png)
+
+VS Code側ではサインイン中の表示が出ており，最終的にタイムアウトしてしまった．
+
+![Warning dialog for fallback when authentication is not finiched](//images.ctfassets.net/krl0y7jst2eo/105ia30Ca99reUtYFZw4vU/5e9fe3d83eaa88b66984b6b4d67fe380/2023-07-27_22-33.png)
+
+上記の通り，通常のフローでGitHubへのサインインを完了できなかった場合，ローカルサーバを利用するフォールバックが用意されている．今回のケースではフォールバックの手段で正常にサインインを完了することができた．
+
+しかし，通常のフローが機能していないことの原因がわからないのは気持ち悪いので，調査を続けよう．
+
+Google検索していると，[参考になりそうなIssue](https://github.com/MicrosoftDocs/live-share/issues/3057#issuecomment-577759365)を見つけることができた．
+
+VS Codeへのリダイレクトが機能しないのは単にXDGのMIMEが正しく構成されていないことが原因のようだ．
+
+それもそのはずで，VS Code Insidersでは以下のようなMIMEを必要としている．
+
+```
+x-scheme-handler/vscode-insiders=code-insiders-url-handler.desktop
+```
+
+しかし，nixpkgsではこのデスクトップアイテムを作る際に[通常のvscode用のMIMEタイプを登録している](https://github.com/NixOS/nixpkgs/blob/e9ca92b55bed47696cc7cc25d3f854a1e2e01f86/pkgs/applications/editors/vscode/generic.nix#L63)ようだ．
+
+これもoverrideしてみよう．
+
+```nix
+{
+  programs.vscode = {
+    enable = true;
+    package = (pkgs.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
+      pname = "vscode-insiders";
+      version = "1.81.0";
+      src = (builtins.fetchTarball {
+        url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
+        sha256 = "18la3h19fkla33xrmhqpr752jhs6p6w8i8z8ag39izblqyr46pf7";
+      });
+      buildInputs = oldAttrs.buildInputs ++ [ pkgs.libkrb5 ];
+      urlHandlerDesktopItem = pkgs.makeDesktopItem {
+        name = "code-insiders-url-handler";
+        desktopName = "Visual Studio Code - Insiders - URL Handler";
+        comment = "Code Editing. Redefined.";
+        genericName = "Text Editor";
+        exec = "code-insiders" + " --open-url %U";
+        icon = "code";
+        startupNotify = true;
+        categories = [ "Utility" "TextEditor" "Development" "IDE" ];
+        mimeTypes = [ "x-scheme-handler/${pname}" ];
+        keywords = [ "vscode" ];
+        noDisplay = true;
+      };
+    });
+  };
+}
+```
+
+これでhome-manager switchを行ったあと，GitHubにサインインを試みると，無事に登録したデスクトップアイテムが機能し，アプリケーションにリダイレクトで戻ることができた．
+
+### An OS keyring couldn't be identified for storing the encryption related data in your current desktop environment
+
+無事GitHubにサインインできたと思ったら，今度は以下のようなダイアログが表示された．
+
+![An OS keyring couldn't be identified for storing the encryption related data in your current desktop environment](//images.ctfassets.net/krl0y7jst2eo/6nz6gKt7ndcHVtv0FUzlfS/ce74bd2a86b15f8d8fd9e2abd849885a/2023-07-27_22-35.png)
+
+VS Codeでは鍵を管理するためにOSのキーリングを使用してくれるようなのだが，それが特定できなかったということなのだろう．エラーメッセージで検索すると[わかりやすいIssue](https://github.com/microsoft/vscode/issues/187338)があった．
+
+私も上のIssueと同様にGNOME Keyringを使用しているのだが，まぁ，これはそもそもNixOS, LightDM, XMonad, Picomみたいなmassではなかろう環境を使っているやつが悪い気もするので，大人しく`~/.vscode-insiders/argv.json`に`"password-store": "gnome"`を追記して対応することにする．
+
+これで，OSのキーリングが特定できないというエラーは消えたのだが・・・．
+
+### You're running in a GNOME Environment but the OS keyring is not available for encryption
+
+今度は別のエラーダイアログが出てきた．
+
+![You're running in a GNOME Environment but the OS keyring is not available for encryption](//images.ctfassets.net/krl0y7jst2eo/av7TXNUNZhOXy1MEhoSg4/68b634afbe5a21d7e48e34a00c69bb77/2023-07-27_23-33.png)
+
+OS Keyringで暗号化が使えないようだ．
+
+前述の通り私はGNOME Keyringを使用しており，libsecretも導入されている．GNOME Keyringはログイン時に自動的に解除されるため，ロックもされていない．なぜだろう．
+
+`Open troubleshooting guide`ボタンを押して見ると[公式ドキュメントからKeychainのトラブルシューティングのページ](https://code.visualstudio.com/docs/editor/settings-sync#_troubleshooting-keychain-issues)が開く．
+
+このドキュメントとVS Code，Electron，Chromiumのソースコードを見てみると，以下のようなことがわかる．
+
+- VS CodeはこれまでSystem Keychainを操作する際，[node-keytar](https://github.com/atom/node-keytar)を使用していたが，このライブラリは2022年の12月16日以降パブリックアーカイブの状態にある．そのため**バージョン1.80以降，Electronが提供しているsafeStorage APIを使用するようになった**
+- sageStorage APIの実態は**ChromiumにあるOSCryptというコンポーネント**である
+- `--password-store=gnome`オプションは[Chromium由来のオプション](https://source.chromium.org/chromium/chromium/src/+/refs/tags/115.0.5736.0:docs/linux/password_storage.md)である．[ここ](https://source.chromium.org/chromium/chromium/src/+/refs/tags/115.0.5736.0:components/os_crypt/sync/key_storage_util_linux.cc;l=39)や[このへん](https://source.chromium.org/chromium/chromium/src/+/refs/tags/115.0.5736.0:components/os_crypt/sync/key_storage_linux.cc;l=175)のコードを見るとわかるとおり，password-store=gnomeが指定されているとlibsecretを使用して初期化を試み，失敗した場合libgnome-keyringにフォールバックする
+
+なんとなく処理の流れがわかったところで，公式ドキュメントに記載されている通り`--verbose`フラグ立てて，os_crypt関係のログを見てみよう．
+
+```shell
+$ code-insiders --verbose --vmodule="*/components/os_crypt/*=1"
+[...]
+[2843348:0726/182525.046422:VERBOSE1:key_storage_linux.cc(122)] Selected backend for OSCrypt: GNOME_ANY
+[2843348:0726/182525.046673:VERBOSE1:libsecret_util_linux.cc(111)] Could not load libsecret-1.so.0: libsecret-1.so.0: cannot open shared object file: No such file or directory
+[2843348:0726/182525.046702:WARNING:key_storage_linux.cc(177)] OSCrypt tried Libsecret but couldn't initialise.
+[2843348:0726/182525.046809:WARNING:keyring_util_linux.cc(76)] Could not load libgnome-keyring.so.0: libgnome-keyring.so.0: cannot open shared object file: No such file or directory
+[2843348:0726/182525.046824:WARNING:key_storage_linux.cc(190)] OSCrypt tried Keyring but couldn't initialise.
+[2843348:0726/182525.046850:VERBOSE1:key_storage_linux.cc(142)] OSCrypt did not initialize a backend.
+[...]
+```
+
+OSCryptはBackendとしてGNOME_ANYを選択し，libsecretの使用を試行し，失敗したあとlibgnome-keyringの使用を試行している．期待通りの動作だ．
+
+おかしいのは，**それらのShered Objectを見つけられていない**ことだ．
+
+Shared Objectが見つからない．というのは，Nixのパッケージをいじっているとよくあることなので，適切に依存性を追加してpatchelfされるようにするだけなのだが，[nixpkgsにあるvscodeのNix式にはlibsecretが依存関係としてしっかり記載されている](https://github.com/NixOS/nixpkgs/blob/bd836ac5e5a7358dea73cb74a013ca32864ccb86/pkgs/applications/editors/vscode/generic.nix#L68C10-L68C10)ように見える．
+
+なぜだろう？
+
+lddで調べてみると，Electron（os_crypt）を含むと考えられる`code-insider`バイナリは**起動時にリンクするライブラリとしてlibsecretへの依存関係を持っていない**ようだ．
+
+```text
+$ ldd /nix/store/nzfwvlcssl1fzac4waybfc28qhrynldx-vscode-insiders-1.81.0/lib/vscode/code-insiders                                      
+        linux-vdso.so.1 (0x00007ffd63d00000)
+        libffmpeg.so => /nix/store/nzfwvlcssl1fzac4waybfc28qhrynldx-vscode-insiders-1.81.0/lib/vscode/libffmpeg.so (0x00007f68a8a00000)
+        libdl.so.2 => /nix/store/yaz7pyf0ah88g2v505l38n0f3wg2vzdj-glibc-2.37-8/lib/libdl.so.2 (0x00007f68b264f000)
+        libpthread.so.0 => /nix/store/yaz7pyf0ah88g2v505l38n0f3wg2vzdj-glibc-2.37-8/lib/libpthread.so.0 (0x00007f68b264a000)
+        librt.so.1 => /nix/store/yaz7pyf0ah88g2v505l38n0f3wg2vzdj-glibc-2.37-8/lib/librt.so.1 (0x00007f68b2645000)
+        libgobject-2.0.so.0 => /nix/store/ccrg05hb9nxpfmmaw08673x3dvf91m9b-glib-2.76.2/lib/libgobject-2.0.so.0 (0x00007f68b25e4000)
+        libglib-2.0.so.0 => /nix/store/ccrg05hb9nxpfmmaw08673x3dvf91m9b-glib-2.76.2/lib/libglib-2.0.so.0 (0x00007f68a8eb9000)
+        libgio-2.0.so.0 => /nix/store/ccrg05hb9nxpfmmaw08673x3dvf91m9b-glib-2.76.2/lib/libgio-2.0.so.0 (0x00007f68a8815000)
+        libnss3.so => /nix/store/9la9nzs9m32jrdifxvh1na9dj6rhmcp0-nss-3.79.4/lib/libnss3.so (0x00007f68a86da000)
+        libnssutil3.so => /nix/store/9la9nzs9m32jrdifxvh1na9dj6rhmcp0-nss-3.79.4/lib/libnssutil3.so (0x00007f68b25b0000)
+        libsmime3.so => /nix/store/9la9nzs9m32jrdifxvh1na9dj6rhmcp0-nss-3.79.4/lib/libsmime3.so (0x00007f68b2584000)
+        libnspr4.so => /nix/store/l9ad7limn5iwvbjd8wnpdfmhp22lz9ia-nspr-4.35/lib/libnspr4.so (0x00007f68a8e76000)
+        libatk-1.0.so.0 => /nix/store/239s69d25ny81p3ib8zym7gmwa8j4cjy-at-spi2-core-2.48.0/lib/libatk-1.0.so.0 (0x00007f68b2559000)
+        libatk-bridge-2.0.so.0 => /nix/store/239s69d25ny81p3ib8zym7gmwa8j4cjy-at-spi2-core-2.48.0/lib/libatk-bridge-2.0.so.0 (0x00007f68a869d000)
+        libdbus-1.so.3 => /nix/store/hkqq6wf72lrjgc5qa78vfdwrr1y27i55-dbus-1.14.8-lib/lib/libdbus-1.so.3 (0x00007f68a8646000)
+        libdrm.so.2 => /nix/store/1a56pl0n9pdmp7k5l0njy59nqmq8daml-libdrm-2.4.115/lib/libdrm.so.2 (0x00007f68a8e5f000)
+        libgtk-3.so.0 => /nix/store/mg5wp9j7fnkm3hcp1bjqnvpk0sgv6mga-gtk+3-3.24.37/lib/libgtk-3.so.0 (0x00007f68a7e00000)
+        libpango-1.0.so.0 => /nix/store/jxzaj85cm1aadm60bwrdvs6w3xyz6f21-pango-1.50.14/lib/libpango-1.0.so.0 (0x00007f68a7d95000)
+        libcairo.so.2 => /nix/store/6s1b7z61j73h3p5zyx9fkwvcfqr1kc36-cairo-1.16.0/lib/libcairo.so.2 (0x00007f68a7c59000)
+        libm.so.6 => /nix/store/yaz7pyf0ah88g2v505l38n0f3wg2vzdj-glibc-2.37-8/lib/libm.so.6 (0x00007f68a7b79000)
+        libX11.so.6 => /nix/store/577pnw4hq5bvjkqvih0k4g1ly1806ig8-libX11-1.8.6/lib/libX11.so.6 (0x00007f68a7a35000)
+        libXcomposite.so.1 => /nix/store/kz385z7cfbgzivniivc653rfizl67a0x-libXcomposite-0.4.5/lib/libXcomposite.so.1 (0x00007f68a8e58000)
+        libXdamage.so.1 => /nix/store/2p5jni4q8dcg54327znz1fw4qqvxz2m4-libXdamage-1.1.5/lib/libXdamage.so.1 (0x00007f68a8e53000)
+        libXext.so.6 => /nix/store/lh9vid3ga07is0lg9crqbwndb7pv0495-libXext-1.3.4/lib/libXext.so.6 (0x00007f68a8631000)
+        libXfixes.so.3 => /nix/store/3k8gxw1pgbmjbswa3gjsdgzwbdb55slm-libXfixes-6.0.0/lib/libXfixes.so.3 (0x00007f68a8629000)
+        libXrandr.so.2 => /nix/store/z7gnim8qz77jiz9fi1kk7xgmm3acsw7y-libXrandr-1.5.2/lib/libXrandr.so.2 (0x00007f68a861c000)
+        libgbm.so.1 => /nix/store/j9q2kadhbqr709bs65xfyscgkjyyc1sq-mesa-23.0.3/lib/libgbm.so.1 (0x00007f68a860b000)
+        libexpat.so.1 => /nix/store/m0inyjcw7p1h9677mv9gah92ksz1mg03-expat-2.5.0/lib/libexpat.so.1 (0x00007f68a7a0a000)
+        libxcb.so.1 => /nix/store/9r9i8qw43rkpr42y7icjbdv43y0njwhg-libxcb-1.14/lib/libxcb.so.1 (0x00007f68a79df000)
+        libxkbcommon.so.0 => /nix/store/61gxcc75w0dhr48asww3kglvn8j0js1d-libxkbcommon-1.5.0/lib/libxkbcommon.so.0 (0x00007f68a7999000)
+        libasound.so.2 => /nix/store/8l55v7r9r8mzasz28k39x07d8r7zhf1r-alsa-lib-1.2.8/lib/libasound.so.2 (0x00007f68a788e000)
+        libatspi.so.0 => /nix/store/239s69d25ny81p3ib8zym7gmwa8j4cjy-at-spi2-core-2.48.0/lib/libatspi.so.0 (0x00007f68a7853000)
+        libgcc_s.so.1 => /nix/store/81d13il7plchw65gz8y9ywcxrngq149c-gcc-12.2.0-libgcc/lib/libgcc_s.so.1 (0x00007f68a85ea000)
+        libc.so.6 => /nix/store/yaz7pyf0ah88g2v505l38n0f3wg2vzdj-glibc-2.37-8/lib/libc.so.6 (0x00007f68a766d000)
+        /nix/store/46m4xx889wlhsdj72j38fnlyyvvvvbyb-glibc-2.37-8/lib/ld-linux-x86-64.so.2 => /nix/store/yaz7pyf0ah88g2v505l38n0f3wg2vzdj-glibc-2.37-8/lib64/ld-linux-x86-64.so.2 (0x00007f68b2658000)
+        libffi.so.8 => /nix/store/4a6iv3pl9npf4iwm72dskwl89hckdcdj-libffi-3.4.4/lib/libffi.so.8 (0x00007f68a7660000)
+        libpcre2-8.so.0 => /nix/store/8vng38l0n2nwxc1p9chgs6pwmqb159c7-pcre2-10.42/lib/libpcre2-8.so.0 (0x00007f68a75c3000)
+        libgmodule-2.0.so.0 => /nix/store/ccrg05hb9nxpfmmaw08673x3dvf91m9b-glib-2.76.2/lib/libgmodule-2.0.so.0 (0x00007f68a75bc000)
+        libz.so.1 => /nix/store/69jpyha5zbll6ppqzhbihhp51lac1hrp-zlib-1.2.13/lib/libz.so.1 (0x00007f68a759d000)
+        libmount.so.1 => /nix/store/z8a0hr2480l22spzlm1in2w90l14iyzq-util-linux-minimal-2.38.1-lib/lib/libmount.so.1 (0x00007f68a753c000)
+        libselinux.so.1 => /nix/store/pxjdr24ib25ins423d2qn98jfbkrkw2c-libselinux-3.3/lib/libselinux.so.1 (0x00007f68a750d000)
+        libplds4.so => /nix/store/l9ad7limn5iwvbjd8wnpdfmhp22lz9ia-nspr-4.35/lib/libplds4.so (0x00007f68a7508000)
+        libplc4.so => /nix/store/l9ad7limn5iwvbjd8wnpdfmhp22lz9ia-nspr-4.35/lib/libplc4.so (0x00007f68a7501000)
+        libsystemd.so.0 => /nix/store/8vkyh3z9pfyhd30aj8d547g4psr3knil-systemd-minimal-253.6/lib/libsystemd.so.0 (0x00007f68a740f000)
+        libgdk-3.so.0 => /nix/store/mg5wp9j7fnkm3hcp1bjqnvpk0sgv6mga-gtk+3-3.24.37/lib/libgdk-3.so.0 (0x00007f68a7300000)
+        libpangocairo-1.0.so.0 => /nix/store/jxzaj85cm1aadm60bwrdvs6w3xyz6f21-pango-1.50.14/lib/libpangocairo-1.0.so.0 (0x00007f68a72ef000)
+        libharfbuzz.so.0 => /nix/store/zifrlh0v9b7i7d2llz00622hspdqrlq1-harfbuzz-7.2.0/lib/libharfbuzz.so.0 (0x00007f68a71d4000)
+        libpangoft2-1.0.so.0 => /nix/store/jxzaj85cm1aadm60bwrdvs6w3xyz6f21-pango-1.50.14/lib/libpangoft2-1.0.so.0 (0x00007f68a71bb000)
+        libfontconfig.so.1 => /nix/store/09p7hgc6md4w5hij7gpbfvzdi8w9k8ka-fontconfig-2.14.0-lib/lib/libfontconfig.so.1 (0x00007f68a716f000)
+        libfribidi.so.0 => /nix/store/vwwf48d3x0mv85ycic1wz11j5ivza9gz-fribidi-1.0.12/lib/libfribidi.so.0 (0x00007f68a714d000)
+        libcairo-gobject.so.2 => /nix/store/6s1b7z61j73h3p5zyx9fkwvcfqr1kc36-cairo-1.16.0/lib/libcairo-gobject.so.2 (0x00007f68a7142000)
+        libgdk_pixbuf-2.0.so.0 => /nix/store/vb0bdqvr35sfly4jvn3yxgmd2kgbdqx4-gdk-pixbuf-2.42.10/lib/libgdk_pixbuf-2.0.so.0 (0x00007f68a7115000)
+        libepoxy.so.0 => /nix/store/hfrkg8jlrj6wziw7h1wdyc7qrvk0mlzv-libepoxy-1.5.10/lib/libepoxy.so.0 (0x00007f68a6fe0000)
+        libXi.so.6 => /nix/store/b48hifb0sqzxnxljqlpimixrsqpy3i5d-libXi-1.8/lib/libXi.so.6 (0x00007f68a6fcc000)
+        libtracker-sparql-3.0.so.0 => /nix/store/ayfnfr9sf5sp66gd5bs7acjx3il118am-tracker-3.5.1/lib/libtracker-sparql-3.0.so.0 (0x00007f68a6ef8000)
+        libthai.so.0 => /nix/store/ac9d89j3mdmclj6zrq555narid2b3lp7-libthai-0.1.29/lib/libthai.so.0 (0x00007f68a6eec000)
+        libpixman-1.so.0 => /nix/store/izrqpvgiiji0i1xrk719vghaypy5zh6l-pixman-0.42.2/lib/libpixman-1.so.0 (0x00007f68a6e41000)
+        libfreetype.so.6 => /nix/store/hzhk4z9in716392abx0byqdqgcwhnkd6-freetype-2.13.0/lib/libfreetype.so.6 (0x00007f68a6d71000)
+        libEGL.so.1 => /nix/store/36hfsb2jjzhn5pgmh140vjxh97spmql3-libglvnd-1.6.0/lib/libEGL.so.1 (0x00007f68a6d5b000)
+        libpng16.so.16 => /nix/store/23rqq5igphh0li64kzxw34hr6l713hbv-libpng-apng-1.6.39/lib/libpng16.so.16 (0x00007f68a6d22000)
+        libxcb-shm.so.0 => /nix/store/9r9i8qw43rkpr42y7icjbdv43y0njwhg-libxcb-1.14/lib/libxcb-shm.so.0 (0x00007f68a6d1d000)
+        libxcb-render.so.0 => /nix/store/9r9i8qw43rkpr42y7icjbdv43y0njwhg-libxcb-1.14/lib/libxcb-render.so.0 (0x00007f68a6d0e000)
+        libXrender.so.1 => /nix/store/k8f0jyckdrn6ww2pm0cspvh4iq6zsbg2-libXrender-0.9.10/lib/libXrender.so.1 (0x00007f68a6cff000)
+        libGL.so.1 => /nix/store/36hfsb2jjzhn5pgmh140vjxh97spmql3-libglvnd-1.6.0/lib/libGL.so.1 (0x00007f68a6c71000)
+        libwayland-server.so.0 => /nix/store/vcsb019z7yvj20k5gpdxxf2s8qzamy71-wayland-1.22.0/lib/libwayland-server.so.0 (0x00007f68a6c5b000)
+        libXau.so.6 => /nix/store/qmmjdcfdxxx8cbyjf422sajp8cmhn245-libXau-1.0.9/lib/libXau.so.6 (0x00007f68a6c56000)
+        libXdmcp.so.6 => /nix/store/vqzsk2ilgwhdmclc8cafzaq8wr8h2kgs-libXdmcp-1.1.3/lib/libXdmcp.so.6 (0x00007f68a6c4c000)
+        libblkid.so.1 => /nix/store/z8a0hr2480l22spzlm1in2w90l14iyzq-util-linux-minimal-2.38.1-lib/lib/libblkid.so.1 (0x00007f68a6bf4000)
+        libpcre.so.1 => /nix/store/m5vynwrm18blksb171g5l5m55phb6pkb-pcre-8.45/lib/libpcre.so.1 (0x00007f68a6b7a000)
+        libcap.so.2 => /nix/store/km7pq18dncnff31plmkda2gd2a0kr8q8-libcap-2.68-lib/lib/libcap.so.2 (0x00007f68a6b6e000)
+        libwayland-client.so.0 => /nix/store/vcsb019z7yvj20k5gpdxxf2s8qzamy71-wayland-1.22.0/lib/libwayland-client.so.0 (0x00007f68a6b5a000)
+        libwayland-cursor.so.0 => /nix/store/vcsb019z7yvj20k5gpdxxf2s8qzamy71-wayland-1.22.0/lib/libwayland-cursor.so.0 (0x00007f68a6b50000)
+        libwayland-egl.so.1 => /nix/store/vcsb019z7yvj20k5gpdxxf2s8qzamy71-wayland-1.22.0/lib/libwayland-egl.so.1 (0x00007f68a6b4b000)
+        libXcursor.so.1 => /nix/store/zr19frmxba3l1vrb30d7p3hr9fmnidhr-libXcursor-1.2.0/lib/libXcursor.so.1 (0x00007f68a6b3e000)
+        libXinerama.so.1 => /nix/store/ik66xdxsmx82hv308azjdspg8cdx3yr5-libXinerama-1.1.4/lib/libXinerama.so.1 (0x00007f68a6b37000)
+        libgraphite2.so.3 => /nix/store/3a7z5a7badjd3pcnbwfyjjlq4nsgawkc-graphite2-1.3.14/lib/libgraphite2.so.3 (0x00007f68a6b0e000)
+        libbz2.so.1 => /nix/store/v0iir4ksr0vb1px00yd80hip9yy5p4hk-bzip2-1.0.8/lib/libbz2.so.1 (0x00007f68a6afb000)
+        libbrotlidec.so.1 => /nix/store/s8nvsm98imvdwjjw548ag0k19mxri957-brotli-1.0.9-lib/lib/libbrotlidec.so.1 (0x00007f68a6aed000)
+        libjpeg.so.62 => /nix/store/299nxbcdwz9ldgygip4kikznnl0kmks7-libjpeg-turbo-2.1.5.1/lib/libjpeg.so.62 (0x00007f68a6a3c000)
+        libjson-glib-1.0.so.0 => /nix/store/6rykv71i3qv3l4lvlzvsynjcwgc4nah7-json-glib-1.6.6/lib/libjson-glib-1.0.so.0 (0x00007f68a6a11000)
+        libxml2.so.2 => /nix/store/z4bz1x212lspwci9g82g3g5fxqx248cz-libxml2-2.10.4/lib/libxml2.so.2 (0x00007f68a68ab000)
+        libsqlite3.so.0 => /nix/store/n12a68qch9s85k6ni4m4r4xxr8lwys1i-sqlite-3.41.2/lib/libsqlite3.so.0 (0x00007f68a675a000)
+        libdatrie.so.1 => /nix/store/m7i5ddr0zrjqna7bgghmvw6km2x5lpc8-libdatrie-2019-12-20-lib/lib/libdatrie.so.1 (0x00007f68a6750000)
+        libGLdispatch.so.0 => /nix/store/36hfsb2jjzhn5pgmh140vjxh97spmql3-libglvnd-1.6.0/lib/libGLdispatch.so.0 (0x00007f68a6697000)
+        libGLX.so.0 => /nix/store/36hfsb2jjzhn5pgmh140vjxh97spmql3-libglvnd-1.6.0/lib/libGLX.so.0 (0x00007f68a6663000)
+        libbrotlicommon.so.1 => /nix/store/s8nvsm98imvdwjjw548ag0k19mxri957-brotli-1.0.9-lib/lib/libbrotlicommon.so.1 (0x00007f68a663e000)
+```
+
+しかし，実際にログ上ではlibsecretを使おうとしていることが確認できている．
+
+この結果から，**実行時に動的にロード（dlopen）している**と考えられる．
+
+Chromiumのコードを検索したらすぐに[その考えが正しい](https://source.chromium.org/chromium/chromium/src/+/refs/tags/115.0.5736.0:components/os_crypt/sync/libsecret_util_linux.cc;l=105)ことがわかった．
+
+さて，nixpkgsに含まれるVS CodeのNix式では，**libsecretはbuildInputsで指定されている**．
+
+VS Codeのようなバイナリ配布されているソフトウェアをNixパッケージングする際は，`autoPathElfHook`を使用することで，**buildInputsとnativeBuildInputsに基づいてShared Objectの依存関係を自動的に発見し解決してくれる**のだが，**これはELFのDynamicSectionを参考に行われるため，ここに列挙されていない（実行時動的リンクされるような）ライブラリはサポートされない**．
+
+参考: [Nixpkgs Manual](https://nixos.org/manual/nixpkgs/stable/#setup-hook-autopatchelfhook)
+
+つまり，dlopenで呼ばれるようなライブラリに対してはautoPathElfHookによるパスの書き換えが行われないため，バイナリは実行時に動的にロードするようなShare Objectを見つけることができない．
+
+わかってしまえば非常に単純な話である．
+
+こういう場合どうすればいいのだろうか．
+
+NixPkgsのドキュメントにそのものズバリな答えがしっかり書いてる．
+
+`runtimeDependencies`変数に列挙されたライブラリは無条件にrpathに追加されるようだ．そして，これはまさにdlopenを使用して実行時に動的にライブラリをロードするようなプログラムのためのものである．
+
+NixpkgsにあるVS CodeのNix式にはすでにruntimeDependenciesが指定されているので，オーバーライドでlibsecretを追加すればいいだろう．
+
+```nix
+{
+  programs.vscode = {
+    enable = true;
+    package = (pkgs.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
+      pname = "vscode-insiders";
+      version = "1.81.0";
+      src = (builtins.fetchTarball {
+        url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
+        sha256 = "18la3h19fkla33xrmhqpr752jhs6p6w8i8z8ag39izblqyr46pf7";
+      });
+      buildInputs = oldAttrs.buildInputs ++ [ pkgs.libkrb5 ];
+      runtimeDependencies = lib.optionals pkgs.stdenv.isLinux (oldAttrs.runtimeDependencies ++ [ pkgs.libsecret ]);
+      urlHandlerDesktopItem = pkgs.makeDesktopItem {
+        name = "code-insiders-url-handler";
+        desktopName = "Visual Studio Code - Insiders - URL Handler";
+        comment = "Code Editing. Redefined.";
+        genericName = "Text Editor";
+        exec = "code-insiders" + " --open-url %U";
+        icon = "code";
+        startupNotify = true;
+        categories = [ "Utility" "TextEditor" "Development" "IDE" ];
+        mimeTypes = [ "x-scheme-handler/${pname}" ];
+        keywords = [ "vscode" ];
+        noDisplay = true;
+      };
+    });
+  };
+}
+```
+
+このNix式でhome-manager switchしたあと，再度GitHubへのログインを試みると今度はエラーが表示されなくなった．
+
+念の為Seahorseで確認してみると，code-insiderが登録したLogin Itemが確認できた．
+
+これでVS Codeを起動するたびGitHubへのログインを行わなくて済む．
+
+#### Excursus
+
+VS Codeはこれまでnode-keytarを使用していたと書いたが，keytarはバージョン1.81のInsidersビルドにもまだ含まれていた．
+
+keytarのバイナリをlddで調べてみると，libsecretを起動時の依存関係として持っていることがわかる．
+
+つまり，1.80未満のバージョンであれば，runtimeDependenciesを使用しなくてもautoPathElfHookがいい感じに処理してくれていたのだろう．
+
+## 最後に
+
+GitHub Copilot Chatを試そうとしただけなのにかなりYak Shavingしてしまった．
+
+ここで得た知見を何かしら[nixpkgs](https://github.com/NixOS/nixpkgs)にフィードバックしたいと思うが，他の仕事が詰まっているのでひとまず備忘のため記事として残しておく．

@@ -1,0 +1,121 @@
+---
+title: "OpenTofuでセルフビルドしたterraform-provider-awsを使う"
+slug: "using-self-built-terraform-provider-aws-with-opentofu"
+description: "Terraformを本格的に使っているとProviderに手を入れたくなることがある．久しぶりに，手を入れてセルフビルドしたProviderを使う必要に迫られたのだが，ローカルにあるProviderを直接使う方法を完全に失念していた．最近，TerraformからOpenTofuに移行したこともあり，折角なのでOpenTofuでセルフビルドしたProviderを使う方法を調査した．"
+publishedOn: "2024-05-17"
+tags: ["terraform","aws","go","opentofu"]
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+contentful: {"entryId":"4DGzaAyu7qjay2kXyutY8d","contentType":"post","updatedAt":"2024-05-19T12:54:47.913Z"}
+---
+
+## 導入
+
+Terraformを使っているとProviderを修正したくなることが多々ある．事実，terraform-provider-awsなどは，割と自社でカスタマイズしたバイナリを使っている企業も多いのではないだろうか．
+
+私は久しくAWSの構成を大きく変更するような作業をしていなかったのだが，久しぶりに大規模な構成の変更を計画したことからTerraformと向き合うことになった．
+
+さて，新たにIPv6を基本としたVPCを展開するため，セグメントを設計し，HCLを書いていざapplyしようとしたところ，次のようなエラーに出くわした．
+
+```bash
+$ tofu plan
+╷
+│ Error: expected "ipv6_cidr_block" to contain a network Value with between 56 and 56
+│
+[...]
+```
+
+どうやら，56ビットより大きなCIDR値は使えないようだ．
+
+いや，そんなことはない．事前にAWSコンソールを使用して想定構成の簡単なテストしており/60のIPv6セグメントが展開できたことを確認している．
+
+つまり，terraform-provider-awsがこの新しい値に対応していないのだろう．
+
+修正も簡単そうだし，久しぶりにセルフビルドしたterraform-provider-awsを使おうとしたところ，久しぶりすぎて開発中のProviderをRerraformで試す方法を完全に失念してしまっていた．さらに，現在はTerraformではなく[OpenTofuを使っている](https://incipe.dev/blog/post/try-using-opentofu/)ので，改めてOpenTofuで自前でビルドしたローカルにしかないプロバイダを使用する方法について確認し，備忘録として残すことにした．
+
+## terraform-provider-awsのビルド
+
+さて，TerraformはGoで書かれているので，Providerも基本的にはGoで書くことが要請されている．
+
+最近のGoはモジュールシステムが整備されており，go.modがあればGOPATHにソースコードを置かなくても，プロジェクトトップで`go build`, `go install`ができるので非常に楽になった．
+
+[GitHub](https://github.com/hashicorp/terraform-provider-aws)からコードをクローンして`go install`を実行すれば，バイナリが`$GOPATH/bin`に配備される．
+
+```bash
+$ git clone https://github.com/hashicorp/terraform-provider-aws
+$ cd terraform-provider-aws
+$ go install
+[...]
+$ ls $GOHOME/bin
+[snip] terraform-provider-aws [snip]
+```
+
+## OpenTofuでローカルにだけ存在するProviderを使用する
+
+Terraform/OpenTofuでセルフビルドしたProviderを使う方法はいくつか存在する．
+
+このあたりの詳細はCLI Configuration Fileに関するドキュメントに記載が有る．
+
+- [Terraform: CLI Configuration File](https://developer.hashicorp.com/terraform/cli/config/config-file)
+- [OpenTofu: CLI Configuration File](https://opentofu.org/docs/cli/config/config-file/)
+
+私は現在OpenTofuを使用しているので，ここではOpenTofuのドキュメントを参照していく．
+
+どちらのドキュメントにもProviderのインストールに関する項目があり，それを読むことでプロバイダの解決がどのように行われ，それをどのように制御できるかが書かれているのだが，その中に[Provider開発者向けの開発用オーバーライド](https://opentofu.org/docs/cli/config/config-file/#development-overrides-for-provider-developers)に関する解説がある．
+
+チームや社内に展開する前に，まずは当然自分で試す必要が有るので，今の私にとって必要かつ妥当な手段はこれだろう．
+
+オーバーライドは`CLI Configuration File`に定義する必要がある．
+
+### CLI Configuration File
+
+これは[ドキュメントに有る通り](https://opentofu.org/docs/cli/config/config-file/#locations)，Windows以外では以下のパスに有ることが期待される．
+
+- `~/.tofurc`
+- `$XDG_CONFIG_HOME/opentofu/tofurc`
+
+`~/.terraformrc`が存在する場合，後方互換性のために参照されるが，`~/.tofurc`または`$XDG_CONFIG_HOME/opentofu`が存在する場合は無視される．
+
+**これらのファイルはデフォルトでは作られない**ので，自分で配備する必要がある．
+
+私は$HOMEにあまり設定ファイルを増やしたくないので，デフォルトの`$XDG_CONFIG_HOME`であるところの`~/.config`に置くことにした．
+
+```bash
+$ mkdir ~/.config/opentofu
+$ touch ~/.config/opentofu/tofurc
+```
+
+一つ注意が必要なのは，**環境変数XDG_CONFIG_HOMEが明示的に定義されていないと，この設定ファイルをOpenTofuは利用しない**ことである．
+
+XDG Base Directory Specificationでは，この環境変数が設定されていない場合，デフォルト値である`$HOME/.config`を使用する要請があるので，意識的にこの環境変数を設定してこなったのだが，OpenTofuはこのデフォルト値を考慮してくれないようなので，明示的に設定したところ，期待通りに動くことが確認できた．
+
+最終的に，私は`$XDG_CONFIG_HOME/opentofu/tofurc`を以下のように設定した．
+
+```
+cat $XDG_CONFIG_HOME/opentofu/tofurc
+provider_installation {
+  dev_overrides {
+    "hashicorp/aws" = "/home/<user>/Go/bin"
+  }
+  direct {}
+}
+```
+
+これによって，`hashicorp/aws`Probiderのバージョンとチェックサムの検証を無効化するとともに，当該Providerを私の`$GOHOME/bin`から検出させ，それ以外のProviderは通常通りレジストリを検索してくるようになる．
+
+この状態で`tofu plan`コマンドを実行すると以下のような警告が表示されようになる．
+
+```bash
+$ tofu plan
+╷
+│ Warning: Provider development overrides are in effect
+│
+│ The following provider development overrides are set in the CLI configuration:
+│  - hashicorp/aws in /home/<user>/Go/bin
+│
+│ The behavior may therefore not match any released version of the provider and applying changes may cause the state to become incompatible with published releases.
+╵
+[...]
+```
+
+無事オーバーライドに成功し，セルフビルドしたProviderを使うことに成功した．

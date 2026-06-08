@@ -7,12 +7,13 @@ import Tags from "../../components/atoms/Tags"
 import Hero from "../../components/molecules/Hero"
 import StyledMDXComponent from "../../components/StyledMDXComponent"
 import DummyText from "../../constants/Dummy/Text"
+import type { ContentfulPost } from "../../types/contentful"
 
 type Props = {
   data: {
-    post: Queries.ContentfulPost
-    previous: Queries.ContentfulPost
-    next: Queries.ContentfulPost
+    post: ContentfulPost
+    previous: ContentfulPost | null
+    next: ContentfulPost | null
   }
 }
 
@@ -32,7 +33,7 @@ const Post: React.FC<Props> = props => {
     imageSrc = getSrc(post.heroImage.gatsbyImageData)
   }
   const body = post.body?.body ?? DummyText
-  const tags = (post.tags as Array<string>) ?? ["No tags."]
+  const tags = post.tags ?? ["No tags."]
 
   return (
     <div className="relative mx-auto max-w-7xl bg-white px-4 py-16 sm:px-6 md:justify-between lg:px-8 lg:pb-28 lg:pt-8">

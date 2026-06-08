@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Helmet } from "react-helmet"
-import useSiteMetadata from "../hooks/useSiteMetadata"
+import { siteMetadata } from "../config/siteMetadata"
 
 type Lang = "en" | "ja"
 
@@ -19,10 +19,8 @@ const SEO: React.FC<Props> = ({
   meta = [],
   image,
 }) => {
-  const siteMetadata = useSiteMetadata()
-
-  const metaDescription = description || siteMetadata?.description
-  const defaultTitle = siteMetadata?.title
+  const metaDescription = description || siteMetadata.description
+  const defaultTitle = siteMetadata.title
 
   return (
     <Helmet
@@ -63,7 +61,7 @@ const SEO: React.FC<Props> = ({
         },
         {
           name: `twitter:creator`,
-          content: siteMetadata?.author?.twitter || ``,
+          content: siteMetadata.author.twitter,
         },
         {
           name: `twitter:title`,

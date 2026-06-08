@@ -1,5 +1,6 @@
 import type { GatsbyConfig } from "gatsby"
 import * as dotenv from "dotenv"
+import { siteMetadata } from "./src/config/siteMetadata"
 
 dotenv.config({
   path: `.env.${process.env["NODE_ENV"]}.local`,
@@ -10,23 +11,11 @@ type SiteMap = {
   allContentfulPost: { nodes: object }
 }
 
-const myId = `cariandrum22`
 const googleFontsCSSAPI = `https://fonts.googleapis.com/css2`
 
 const config: GatsbyConfig = {
   graphqlTypegen: true,
-  siteMetadata: {
-    title: `incipe.dev`,
-    siteUrl: `https://incipe.dev`,
-    description: `This is my personal portfolio and blog site.`,
-    author: {
-      name: `Takafumi Asano`,
-      email: `cariandrum22@gmail.com`,
-      github: myId,
-      twitter: myId,
-      facebook: `takafumi.asano.1`,
-    },
-  },
+  siteMetadata,
   plugins: [
     {
       resolve: `gatsby-source-contentful`,

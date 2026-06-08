@@ -1,6 +1,6 @@
 import Icon from "../../atoms/Icon/Twitter"
 
-type ID = Queries.Maybe<string>
+type ID = string
 
 const Twitter = (id: ID): Incipe.SocialNetworkService.Link => ({
   name: "Twitter",

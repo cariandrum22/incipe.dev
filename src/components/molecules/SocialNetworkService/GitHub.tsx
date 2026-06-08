@@ -1,6 +1,6 @@
 import Icon from "../../atoms/Icon/GitHub"
 
-type ID = Queries.Maybe<string>
+type ID = string
 
 const GitHub = (id: ID): Incipe.SocialNetworkService.Link => ({
   name: "GitHub",

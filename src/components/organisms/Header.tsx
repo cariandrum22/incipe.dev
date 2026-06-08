@@ -11,7 +11,7 @@ const navigation: Incipe.Links = [
 ]
 
 type Props = {
-  title: Queries.Maybe<string>
+  title: string
 }
 
 const Header: React.FC<Props> = ({ title }) => (
@@ -22,7 +22,7 @@ const Header: React.FC<Props> = ({ title }) => (
     >
       <div className="flex w-full items-center justify-between border-b border-slate-800 py-6 lg:border-none">
         <div className="flex items-center">
-          <Logo text={title || "No title"} href="/" />
+          <Logo text={title} href="/" />
           <Links
             className="ml-20 hidden space-x-8 lg:block"
             links={navigation}

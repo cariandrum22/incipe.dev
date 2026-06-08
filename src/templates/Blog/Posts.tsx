@@ -1,11 +1,12 @@
 import React from "react"
 import { graphql } from "gatsby"
 import Blog from "../../components/organisms/Blog"
+import type { ContentfulPost } from "../../types/contentful"
 
 type Props = {
   data: {
     posts: {
-      nodes: Array<Queries.ContentfulPost>
+      nodes: Array<ContentfulPost>
     }
   }
   pageContext: {

@@ -1,10 +1,11 @@
 import React from "react"
 import Card from "../molecules/Card"
+import type { ContentfulPost } from "../../types/contentful"
 
 type Props = {
   title: string
   caption: string
-  children: Array<Queries.ContentfulPost>
+  children: Array<ContentfulPost>
 }
 
 const Blog: React.FC<Props> = ({ title, caption, children }) => (

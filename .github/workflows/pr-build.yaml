@@ -1,0 +1,79 @@
+name: Pull Request Build
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  flake:
+    name: Nix flake
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check flake
+        run: nix flake check
+
+  dependencies:
+    name: Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install npm dependencies
+        run: nix develop -c npm ci --legacy-peer-deps --ignore-scripts
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs:
+      - flake
+      - dependencies
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
+    env:
+      CONTENTFUL_SPACE_ID: ${{ secrets.CONTENTFUL_SPACE_ID }}
+      CONTENTFUL_ACCESS_TOKEN: ${{ secrets.CONTENTFUL_ACCESS_TOKEN }}
+      HASURA_ADMIN_SECRET: ${{ secrets.HASURA_ADMIN_SECRET }}
+      GOOGLE_TAGMANAGER_ID: ${{ secrets.GOOGLE_TAGMANAGER_ID }}
+      GOOGLE_TAGMANAGER_AUTH: ${{ secrets.GOOGLE_TAGMANAGER_AUTH }}
+      GOOGLE_TAGMANAGER_PREVIEW: ${{ secrets.GOOGLE_TAGMANAGER_PREVIEW }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check build secrets
+        run: |
+          test -n "$CONTENTFUL_SPACE_ID"
+          test -n "$CONTENTFUL_ACCESS_TOKEN"
+          test -n "$HASURA_ADMIN_SECRET"
+
+      - name: Install npm dependencies
+        run: nix develop -c npm ci --legacy-peer-deps
+
+      - name: Build site
+        run: nix develop -c npm run build

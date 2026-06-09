@@ -1,18 +1,13 @@
 import { navigate } from "gatsby"
 import React, { useEffect } from "react"
+import IndexView from "../views/IndexView"
 
-const Contents: React.FC = () => {
+const Index: React.FC = () => {
   useEffect(() => {
     navigate("/blog/")
-  })
+  }, [])
 
-  return (
-    <div className="prose relative mx-auto max-w-7xl bg-white px-4 pb-20 pt-16 sm:px-6 md:justify-between lg:px-8 lg:pb-28 lg:pt-24">
-      Under development.
-    </div>
-  )
+  return <IndexView />
 }
-
-const Index: React.FC = () => <Contents />
 
 export default Index

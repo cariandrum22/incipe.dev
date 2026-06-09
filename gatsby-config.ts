@@ -34,7 +34,7 @@ const config: GatsbyConfig = {
     {
       resolve: `gatsby-plugin-purgecss`,
       options: {
-        content: [`gatsby-ssr.ts`, `src/**.*.tsx`, `purs/**/*.purs`],
+        content: [`gatsby-ssr.tsx`, `src/**/*.tsx`, `purs/**/*.purs`],
         tailwind: true,
         purgeOnly: [`styles/styles.css`],
       },

@@ -5,6 +5,7 @@ export default {
     "./src/pages/**/*.tsx",
     "./src/components/**/*.tsx",
     "./src/templates/**/*.tsx",
+    "./src/views/**/*.tsx",
     "./purs/**/*.purs",
   ],
   theme: {
@@ -14,5 +15,5 @@ export default {
       },
     },
   },
-  plugins: [ typography ],
+  plugins: [typography],
 }

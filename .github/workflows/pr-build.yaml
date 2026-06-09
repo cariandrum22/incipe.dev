@@ -39,8 +39,8 @@ jobs:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install npm dependencies
-        run: nix develop -c npm ci --legacy-peer-deps --ignore-scripts
+      - name: Install pnpm dependencies
+        run: nix develop -c pnpm install --frozen-lockfile --ignore-scripts
 
   build:
     name: Build
@@ -63,20 +63,20 @@ jobs:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install npm dependencies
-        run: nix develop -c npm ci --legacy-peer-deps
+      - name: Install pnpm dependencies
+        run: nix develop -c pnpm install --frozen-lockfile
 
       - name: Check content files
-        run: nix develop -c npm run check:content
+        run: nix develop -c pnpm run check:content
 
       - name: Build site
-        run: nix develop -c npm run build
+        run: nix develop -c pnpm run build
 
       - name: Check Astro route contract
-        run: nix develop -c npm run check:routes -- --output-dir output/astro
+        run: nix develop -c pnpm run check:routes --output-dir output/astro
 
       - name: Check Astro head metadata
-        run: nix develop -c npm run check:astro-head
+        run: nix develop -c pnpm run check:astro-head
 
       - name: Check static artifacts
-        run: nix develop -c npm run check:static-artifacts
+        run: nix develop -c pnpm run check:static-artifacts

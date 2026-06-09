@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-decorators": "^7.28.0",
+    "@eslint/js": "^9.39.4",
     "@types/mdx": "^2.0.13",
     "@types/node": "^24.0.14",
     "@types/react": "^18.3.23",
@@ -84,6 +85,7 @@
     "clean": "rm -rf .astro .cache public output",
     "test": "vitest run",
     "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },
   "repository": {

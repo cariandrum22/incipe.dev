@@ -116,6 +116,7 @@
     "build:astro": "astro build --config astro.config.mjs && node scripts/ensure-astro-routes.mjs",
     "check:content": "node scripts/check-content.mjs",
     "check:astro-render": "node scripts/check-astro-render-parity.mjs",
+    "check:deployed-site": "node scripts/check-deployed-site.mjs",
     "check:routes": "node scripts/check-routes.mjs",
     "check:static-artifacts": "node scripts/check-static-artifacts.mjs",
     "develop": "gatsby develop",

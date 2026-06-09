@@ -101,9 +101,7 @@
     "webpack-dev-middleware": "7.4.2",
     "cross-spawn": "7.0.6"
   },
-  "keywords": [
-    "gatsby"
-  ],
+  "keywords": ["astro"],
   "license": "Apache-2.0",
   "licenses": [
     {
@@ -129,7 +127,7 @@
     "start": "astro dev --config astro.config.mjs",
     "serve": "astro preview --config astro.config.mjs",
     "clean": "rm -rf .astro .cache public output",
-    "test": "echo \"Write tests! -> https://gatsby.dev/unit-testing\" && exit 1",
+    "test": "echo \"No tests configured\" && exit 1",
     "lint": "eslint ."
   },
   "repository": {

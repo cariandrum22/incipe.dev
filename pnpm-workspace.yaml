@@ -1,0 +1,10 @@
+overrides:
+  cookie: 1.0.2
+  lodash: "$lodash"
+  path-to-regexp: 0.1.13
+  cross-spawn: 7.0.6
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true

@@ -23,12 +23,12 @@ jobs:
           GOOGLE_TAGMANAGER_AUTH: ${{ secrets.GOOGLE_TAGMANAGER_AUTH }}
           GOOGLE_TAGMANAGER_PREVIEW: ${{ secrets.GOOGLE_TAGMANAGER_PREVIEW }}
         run: |
-          nix develop -c npm ci --legacy-peer-deps
-          nix develop -c npm run check:content
-          nix develop -c npm run build
-          nix develop -c npm run check:routes -- --output-dir output/astro
-          nix develop -c npm run check:astro-head
-          nix develop -c npm run check:static-artifacts
+          nix develop -c pnpm install --frozen-lockfile
+          nix develop -c pnpm run check:content
+          nix develop -c pnpm run build
+          nix develop -c pnpm run check:routes --output-dir output/astro
+          nix develop -c pnpm run check:astro-head
+          nix develop -c pnpm run check:static-artifacts
       - name: Publish
         uses: cloudflare/wrangler-action@v4
         with:
@@ -36,4 +36,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: pages deploy --project-name=incipe-dev output/astro
       - name: Check deployed site
-        run: nix develop -c npm run check:deployed-site
+        run: nix develop -c pnpm run check:deployed-site

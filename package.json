@@ -1,6 +1,7 @@
 {
   "name": "incipe.dev",
   "private": true,
+  "packageManager": "pnpm@10.28.0",
   "description": "This is my personal portfolio and blog site",
   "version": "0.0.1",
   "author": "Takafumi Asano <cariandrum22@gmail.com>",
@@ -52,12 +53,6 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.37.0"
   },
-  "overrides": {
-    "cookie": "1.0.2",
-    "lodash": "$lodash",
-    "path-to-regexp": "0.1.13",
-    "cross-spawn": "7.0.6"
-  },
   "keywords": [
     "astro"
   ],
@@ -80,7 +75,7 @@
     "develop:astro": "astro dev --config astro.config.mjs",
     "export:contentful": "node scripts/export-contentful-mdx.mjs",
     "localize:content-assets": "node scripts/localize-content-assets.mjs",
-    "format": "npm run format:eslint && npm run format:prettier",
+    "format": "pnpm run format:eslint && pnpm run format:prettier",
     "format:prettier": "prettier --write \"**/*.{js,jsx,mjs,ts,tsx,json,md}\"",
     "format:eslint": "eslint --fix \"**/*.{js,jsx,mjs,ts,tsx}\"",
     "start": "astro dev --config astro.config.mjs",

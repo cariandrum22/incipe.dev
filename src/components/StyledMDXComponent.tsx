@@ -39,10 +39,10 @@ const defaultOptions = {
   rehypePlugins: [rehypeKatex, rehypePrism, rehypeSlug],
 }
 
-const StyledMDXComponent = (mdx: string, options = defaultOptions) => {
+const StyledMDXComponent = (mdx: string): JSX.Element => {
   const { default: Content } = evaluateSync(mdx, {
     ...(runtime as RunOptions),
-    ...options,
+    ...defaultOptions,
   })
   return <Content components={components} />
 }

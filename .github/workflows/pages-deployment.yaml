@@ -26,9 +26,7 @@ jobs:
           nix develop -c pnpm install --frozen-lockfile
           nix develop -c pnpm run check:content
           nix develop -c pnpm run build
-          nix develop -c pnpm run check:routes --output-dir output/astro
-          nix develop -c pnpm run check:astro-head
-          nix develop -c pnpm run check:static-artifacts
+          nix develop -c pnpm run check:build-output
       - name: Add pnpm to PATH for Wrangler Action
         run: |
           nix develop -c bash -lc 'printf "%s\n" "$(dirname "$(command -v pnpm)")" >> "$GITHUB_PATH"'

@@ -25,12 +25,9 @@ jobs:
         run: |
           nix develop -c npm ci --legacy-peer-deps
           nix develop -c npm run check:content
-          nix develop -c npm run build
-          nix develop -c npm run check:routes
           nix develop -c npm run build:astro
           nix develop -c npm run check:routes -- --output-dir output/astro
           nix develop -c npm run check:static-artifacts
-          nix develop -c npm run check:astro-render
       - name: Publish
         uses: cloudflare/wrangler-action@v4
         with:

@@ -1,12 +1,13 @@
 import React from "react"
 import Logo from "../atoms/Logo"
 import Links from "../molecules/Navigation/Links"
+import { blogIndexPath, pagePathBySlug } from "../../lib/routes"
 // import SingInSignUp from "../molecules/SignInSignUp"
 
 const navigation: Incipe.Links = [
-  { name: "Blog", href: "/blog" },
-  { name: "About", href: "/about" },
-  { name: "Environments", href: "/environments" },
+  { name: "Blog", href: blogIndexPath },
+  { name: "About", href: pagePathBySlug("about") },
+  { name: "Environments", href: pagePathBySlug("environments") },
   // { name: "Laboratory", href: "/laboratory" },
 ]
 

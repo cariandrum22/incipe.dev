@@ -1,4 +1,12 @@
 import { blogCaption, uniqueAuthors, uniqueTags } from "./content"
+import {
+  blogAuthorPathByIdentity,
+  blogIndexPath,
+  blogPostPath,
+  blogTagPath,
+  pagePath,
+  requireRouteSegment,
+} from "./routes"
 import type { BlogPost, BlogPostPreview, PageContent } from "../types/content"
 
 export type BlogPostRouteData = {
@@ -44,16 +52,6 @@ export const buildSiteRouteData = ({
   pages: buildPageRouteData(pages),
 })
 
-export const blogPostPath = (post: BlogPost) =>
-  `/blog/post/${requireString("blog post slug", post.slug)}/`
-
-export const blogTagPath = (tag: string) => `/blog/tag/${tag}/`
-
-export const blogAuthorPath = (authorId: string) => `/blog/author/${authorId}/`
-
-export const pagePath = (page: PageContent) =>
-  `/${requireString("page slug", page.slug)}/`
-
 const buildBlogPostRouteData = (
   posts: Array<BlogPost>,
 ): Array<BlogPostRouteData> =>
@@ -67,7 +65,7 @@ const buildBlogPostRouteData = (
 const buildBlogIndexRouteData = (
   posts: Array<BlogPost>,
 ): BlogPostsRouteData => ({
-  path: "/blog/",
+  path: blogIndexPath,
   title: "Blog",
   caption: blogCaption,
   posts,
@@ -87,10 +85,10 @@ const buildBlogAuthorRouteData = (
   posts: Array<BlogPost>,
 ): Array<BlogPostsRouteData> =>
   uniqueAuthors(posts).map(author => {
-    const authorId = requireString("author identity", author.identity)
+    const authorId = requireRouteSegment("author identity", author.identity)
 
     return {
-      path: blogAuthorPath(authorId),
+      path: blogAuthorPathByIdentity(authorId),
       title: `Author: ${author.name}`,
       caption: author.profile ?? undefined,
       authorId,
@@ -105,8 +103,3 @@ const buildPageRouteData = (pages: Array<PageContent>): Array<PageRouteData> =>
     path: pagePath(page),
     page,
   }))
-
-const requireString = (name: string, value: string | null | undefined) => {
-  if (typeof value === "string" && value.trim().length > 0) return value
-  throw new Error(`${name} must be a non-empty string.`)
-}

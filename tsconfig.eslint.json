@@ -8,6 +8,7 @@
     "astro.config.mjs",
     "postcss.config.js",
     "tailwind.config.mjs",
-    "eslint.config.mjs"
+    "eslint.config.mjs",
+    "vitest.config.ts"
   ]
 }

@@ -97,6 +97,7 @@
     "build": "gatsby build",
     "develop": "gatsby develop",
     "export:contentful": "node scripts/export-contentful-mdx.mjs",
+    "localize:content-assets": "node scripts/localize-content-assets.mjs",
     "format": "npm run format:eslint && npm run format:prettier",
     "format:prettier": "prettier --write \"**/*.{js,jsx,mjs,ts,tsx,json,md}\"",
     "format:eslint": "eslint --fix \"**/*.{js,jsx,mjs,ts,tsx}\"",

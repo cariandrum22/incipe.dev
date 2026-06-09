@@ -4,8 +4,8 @@ slug: "using-visual-studio-code-insiders-under-home-manager"
 description: "GitHub Copilot ChatのLimited Public Betaを試そうとしたが，GitHub Copilot ChatのExtensionはVS Codeのバージョンとして1.81.0以上を要求する．\nこれを書いている現在，最新のStableは1.80.1であるため，Insiders Buildを使用する必要がある．Insiders Buildの導入はNixOS Wikiでも方法が紹介されているので，インストールするだけであれば特段難しいことはなかったのだが，home-managerでVS Code Insiders Buildを導入し問題なく動作させるまでにそこそこのYak Shavingが必要だった．"
 publishedOn: "2023-07-27"
 tags: ["vscode","nixos","home-manager"]
-authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"https://images.ctfassets.net/krl0y7jst2eo/1Q8kwuePvw2SDgcghjINSg/a8fbc38c957a45d79b5bb6e87b3f3600/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
-heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"https://images.ctfassets.net/krl0y7jst2eo/6Gvmcf6LWVu3vdX6H7lGZv/5ba1f4e797f14a12c4b37052e768d31c/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
+authors: [{"identity":"cariandrum22","name":"Takafumi Asano","emailAddress":"cariandrum22@gmail.com","profile":"I am a Software Engineer. I am currently working as a Director, VP of Products and VP of Engineering at codeTact Inc.","picture":{"title":"My old selfie","url":"/content-assets/contentful/1Q8kwuePvw2SDgcghjINSg/Photo_on_1-27-13_at_8.52_PM.jpg","contentType":"image/jpeg","width":640,"height":426}}]
+heroImage: {"title":"A sheep object at Thomas Land","description":"","url":"/content-assets/contentful/6Gvmcf6LWVu3vdX6H7lGZv/0W9A0652.jpg","contentType":"image/jpeg","width":2048,"height":1366}
 contentful: {"entryId":"78PQ3AKWiIM7RjPHaF4M0f","contentType":"post","updatedAt":"2024-05-18T10:46:33.007Z"}
 ---
 
@@ -253,15 +253,15 @@ vscodeVersion変数は，パッケージのversion変数の値を束縛してい
 
 サインインボタンを押下すると，ブラウザに遷移しOAuthが実行されたあとアプリケーションにリダイレクトされる．
 
-![xdg-open dialog after GitHub authentication on Google Chrome](//images.ctfassets.net/krl0y7jst2eo/7fjVudvnKeYdKcxLgzsP2y/c89be2cd8000544e42ab03db52f837d1/2023-07-27_22-24.png)
+![xdg-open dialog after GitHub authentication on Google Chrome](/content-assets/contentful/7fjVudvnKeYdKcxLgzsP2y/2023-07-27_22-24.png)
 
 ここで，`Open xdg-open`ボタンを押下したにも関わらず，VS Codeに結果が戻ってこない．
 
-![Authentication waiting dialog in VS Code](//images.ctfassets.net/krl0y7jst2eo/6IuijCcjb7tnYhd8q6oBfl/ac153a36e80530f09d56fb48c4fc3d90/2023-07-27_22-25.png)
+![Authentication waiting dialog in VS Code](/content-assets/contentful/6IuijCcjb7tnYhd8q6oBfl/2023-07-27_22-25.png)
 
 VS Code側ではサインイン中の表示が出ており，最終的にタイムアウトしてしまった．
 
-![Warning dialog for fallback when authentication is not finiched](//images.ctfassets.net/krl0y7jst2eo/105ia30Ca99reUtYFZw4vU/5e9fe3d83eaa88b66984b6b4d67fe380/2023-07-27_22-33.png)
+![Warning dialog for fallback when authentication is not finiched](/content-assets/contentful/105ia30Ca99reUtYFZw4vU/2023-07-27_22-33.png)
 
 上記の通り，通常のフローでGitHubへのサインインを完了できなかった場合，ローカルサーバを利用するフォールバックが用意されている．今回のケースではフォールバックの手段で正常にサインインを完了することができた．
 
@@ -317,7 +317,7 @@ x-scheme-handler/vscode-insiders=code-insiders-url-handler.desktop
 
 無事GitHubにサインインできたと思ったら，今度は以下のようなダイアログが表示された．
 
-![An OS keyring couldn't be identified for storing the encryption related data in your current desktop environment](//images.ctfassets.net/krl0y7jst2eo/6nz6gKt7ndcHVtv0FUzlfS/ce74bd2a86b15f8d8fd9e2abd849885a/2023-07-27_22-35.png)
+![An OS keyring couldn't be identified for storing the encryption related data in your current desktop environment](/content-assets/contentful/6nz6gKt7ndcHVtv0FUzlfS/2023-07-27_22-35.png)
 
 VS Codeでは鍵を管理するためにOSのキーリングを使用してくれるようなのだが，それが特定できなかったということなのだろう．エラーメッセージで検索すると[わかりやすいIssue](https://github.com/microsoft/vscode/issues/187338)があった．
 
@@ -329,7 +329,7 @@ VS Codeでは鍵を管理するためにOSのキーリングを使用してく�
 
 今度は別のエラーダイアログが出てきた．
 
-![You're running in a GNOME Environment but the OS keyring is not available for encryption](//images.ctfassets.net/krl0y7jst2eo/av7TXNUNZhOXy1MEhoSg4/68b634afbe5a21d7e48e34a00c69bb77/2023-07-27_23-33.png)
+![You're running in a GNOME Environment but the OS keyring is not available for encryption](/content-assets/contentful/av7TXNUNZhOXy1MEhoSg4/2023-07-27_23-33.png)
 
 OS Keyringで暗号化が使えないようだ．
 

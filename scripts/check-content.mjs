@@ -13,10 +13,7 @@ const contentfulAssetPattern = /(?:https:)?\/\/images\.ctfassets\.net\//u
 const markdownImagePattern = /!\[[^\]]*\]\((?<url>[^)\s]+)(?:\s+"[^"]*")?\)/gu
 
 const main = async () => {
-  const errors = [
-    ...(await validateBlogPosts()),
-    ...(await validatePages()),
-  ]
+  const errors = [...(await validateBlogPosts()), ...(await validatePages())]
 
   if (errors.length > 0) {
     console.error(errors.map(error => `- ${error}`).join("\n"))
@@ -101,8 +98,9 @@ const readMdxCollection = async collection => {
 }
 
 const parseMdxDocument = source => {
-  const match =
-    /^---\n(?<frontmatter>[\s\S]*?)\n---\n?(?<body>[\s\S]*)$/u.exec(source)
+  const match = /^---\n(?<frontmatter>[\s\S]*?)\n---\n?(?<body>[\s\S]*)$/u.exec(
+    source,
+  )
 
   if (!match?.groups) {
     return {
@@ -208,7 +206,9 @@ const validateRequiredString = (collection, document, key) => {
   const value = document.frontmatter[key]
   if (typeof value === "string" && value.trim().length > 0) return []
 
-  return [`${collection}/${document.fileName}: ${key} must be a non-empty string`]
+  return [
+    `${collection}/${document.fileName}: ${key} must be a non-empty string`,
+  ]
 }
 
 const validatePublishedOn = (collection, document) => {
@@ -279,7 +279,9 @@ const validateAuthors = document => {
 
 const validateObjectString = (collection, document, key, value) => {
   if (typeof value === "string" && value.trim().length > 0) return []
-  return [`${collection}/${document.fileName}: ${key} must be a non-empty string`]
+  return [
+    `${collection}/${document.fileName}: ${key} must be a non-empty string`,
+  ]
 }
 
 const validateImage = (collection, document, key, value) => {

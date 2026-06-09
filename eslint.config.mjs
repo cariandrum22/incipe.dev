@@ -22,6 +22,11 @@ export default [
       "public/",
     ],
   },
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: "error",
+    },
+  },
   js.configs.recommended,
   typescript.configs.eslintRecommended,
   ...typescript.configs.strict,

@@ -1,6 +1,8 @@
 .cache
+.claude
 .direnv
 .spago
+CLAUDE.md
 output
 public
 package.json

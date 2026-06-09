@@ -5,7 +5,7 @@ const BYSA: Incipe.CreativeCommons.License = {
   abbreviation: "BY-SA",
   deed: new URL("https://creativecommons.org/licenses/by-sa/4.0/"),
   leagalCode: new URL(
-    "https://creativecommons.org/licenses/by-sa/4.0/legalcode"
+    "https://creativecommons.org/licenses/by-sa/4.0/legalcode",
   ),
   button: BYSAButton,
   version: 4.0,

@@ -1,4 +1,5 @@
 import React from "react"
+import { blogTagPath } from "../../lib/routes"
 
 type Props = {
   tags: Array<string>
@@ -9,7 +10,7 @@ const Tags: React.FC<Props> = ({ tags }) => (
     Tags:&nbsp;
     {tags.map((tag, index) => (
       <React.Fragment key={tag}>
-        <a className="text-indigo-600" href={`/blog/tag/${tag}`}>
+        <a className="text-indigo-600" href={blogTagPath(tag)}>
           {tag}
         </a>
         {index !== tags.length - 1 && " "}

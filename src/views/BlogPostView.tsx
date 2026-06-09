@@ -6,6 +6,7 @@ import Hero from "../components/molecules/Hero"
 import StyledMDXComponent from "../components/StyledMDXComponent"
 import DummyText from "../constants/Dummy/Text"
 import Date from "../components/atoms/Date"
+import { blogPostPath } from "../lib/routes"
 import type { BlogPost, BlogPostPreview } from "../types/content"
 
 export type BlogPostViewProps = {
@@ -62,7 +63,7 @@ const BlogPostView: React.FC<BlogPostViewProps> = ({
                 <li className="p-0">
                   <a
                     className="float-left"
-                    href={`/blog/post/${previous.slug}`}
+                    href={blogPostPath(previous)}
                     rel="prev"
                   >
                     ← {previous.title}
@@ -73,7 +74,7 @@ const BlogPostView: React.FC<BlogPostViewProps> = ({
                 <li className="p-0">
                   <a
                     className="float-right"
-                    href={`/blog/post/${next.slug}`}
+                    href={blogPostPath(next)}
                     rel="next"
                   >
                     {next.title} →

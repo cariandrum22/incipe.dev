@@ -2,10 +2,10 @@ import React from "react"
 import Image from "../atoms/Image"
 import ReadingTime from "../atoms/ReadingTime"
 import Date from "../atoms/Date"
-import type { ContentfulPost } from "../../types/contentful"
+import type { BlogPost } from "../../types/content"
 
 type Props = {
-  post: ContentfulPost
+  post: BlogPost
 }
 
 const Card: React.FC<Props> = ({ post }) => (
@@ -14,11 +14,11 @@ const Card: React.FC<Props> = ({ post }) => (
     className="flex flex-col overflow-hidden rounded-lg shadow-lg"
   >
     <div className="shrink-0">
-      {post.heroImage?.gatsbyImageData && (
+      {post.heroImage && (
         <Image
           className="h-48 w-full object-cover"
-          alt=""
-          image={post.heroImage.gatsbyImageData}
+          alt={post.heroImage.description ?? ""}
+          image={post.heroImage}
         />
       )}
     </div>
@@ -33,9 +33,7 @@ const Card: React.FC<Props> = ({ post }) => (
         ))}
         <a href={`/blog/post/${post.slug}`} className="mt-2 block">
           <p className="text-xl font-semibold text-gray-900">{post.title}</p>
-          <p className="mt-3 text-base text-gray-500">
-            {post.description?.description}
-          </p>
+          <p className="mt-3 text-base text-gray-500">{post.description}</p>
         </a>
       </div>
       <div className="mt-6 flex items-center">
@@ -43,11 +41,11 @@ const Card: React.FC<Props> = ({ post }) => (
           <div className="shrink-0" key={author?.name}>
             <a href={`/blog/author/${author?.identity}`}>
               <span className="sr-only">{author?.name}</span>
-              {author?.picture?.gatsbyImageData && (
+              {author?.picture && (
                 <Image
                   className="h-10 w-10 rounded-full"
-                  alt=""
-                  image={author?.picture?.gatsbyImageData}
+                  alt={author.picture.description ?? ""}
+                  image={author.picture}
                 />
               )}
             </a>
@@ -68,7 +66,7 @@ const Card: React.FC<Props> = ({ post }) => (
           <div className="flex space-x-1 text-sm text-gray-500">
             <Date>{String(post.publishedOn)}</Date>
             <span aria-hidden="true">&middot;</span>
-            <ReadingTime>{post.body?.body as string}</ReadingTime>
+            <ReadingTime>{post.body}</ReadingTime>
           </div>
         </div>
       </div>

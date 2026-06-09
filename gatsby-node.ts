@@ -1,7 +1,8 @@
 import { GatsbyNode, CreateWebpackConfigArgs } from "gatsby"
-import { resolve } from "path"
-import { forEach, map, flatten, uniq } from "lodash"
+import { readdirSync, readFileSync } from "node:fs"
+import { resolve } from "node:path"
 import { NormalModuleReplacementPlugin, ProvidePlugin } from "webpack"
+import type { BlogPost, PageContent } from "./src/types/content"
 
 const onCreateWebpackConfig = ({ actions }: CreateWebpackConfigArgs) => {
   actions.setWebpackConfig({
@@ -23,75 +24,116 @@ const onCreateWebpackConfig = ({ actions }: CreateWebpackConfigArgs) => {
   })
 }
 
-type ListOfPosts = {
-  allContentfulPost: {
-    nodes: [
-      {
-        title: string
-        slug: string
-        tags: Array<string>
-        authors: [
-          {
-            identity: string
-            name: string
-            profile: string
-          },
-        ]
-      },
-    ]
+type Frontmatter = Record<string, unknown>
+
+type MdxDocument<TFrontmatter extends Frontmatter> = {
+  body: string
+  frontmatter: TFrontmatter
+}
+
+const blogCaption =
+  "Grammatica loquitur, Dialectia vera docet, Rhetorica verba ministrat, Musica canit, Arithmetica munerat, Geometrica ponderat, Astronomica colit astra."
+
+const contentDirectory = resolve(__dirname, "src", "content")
+
+const readMdxCollection = <TFrontmatter extends Frontmatter>(
+  collection: string,
+): Array<MdxDocument<TFrontmatter>> => {
+  const collectionDirectory = resolve(contentDirectory, collection)
+  return readdirSync(collectionDirectory)
+    .filter(fileName => fileName.endsWith(".mdx"))
+    .map(fileName => {
+      const file = readFileSync(resolve(collectionDirectory, fileName), "utf8")
+      return parseMdxDocument<TFrontmatter>(file)
+    })
+}
+
+const parseMdxDocument = <TFrontmatter extends Frontmatter>(
+  file: string,
+): MdxDocument<TFrontmatter> => {
+  const match = /^---\n(?<frontmatter>[\s\S]*?)\n---\n?(?<body>[\s\S]*)$/u.exec(
+    file,
+  )
+  if (!match?.groups) {
+    throw new Error("MDX file is missing frontmatter.")
+  }
+
+  return {
+    frontmatter: parseFrontmatter(match.groups["frontmatter"] ?? ""),
+    body: match.groups["body"]?.trim() ?? "",
   }
 }
 
-const createPages: GatsbyNode["createPages"] = async ({
-  graphql,
-  actions,
-  reporter,
-}) => {
+const parseFrontmatter = <TFrontmatter extends Frontmatter>(
+  frontmatter: string,
+) =>
+  Object.fromEntries(
+    frontmatter
+      .split("\n")
+      .filter(line => line.trim().length > 0)
+      .map(line => {
+        const separatorIndex = line.indexOf(":")
+        if (separatorIndex === -1) {
+          throw new Error(`Invalid frontmatter line: ${line}`)
+        }
+
+        const key = line.slice(0, separatorIndex).trim()
+        const value = line.slice(separatorIndex + 1).trim()
+        return [key, JSON.parse(value)]
+      }),
+  ) as TFrontmatter
+
+const loadBlogPosts = (): Array<BlogPost> =>
+  readMdxCollection<Omit<BlogPost, "body">>("blog")
+    .map(({ frontmatter, body }) => ({
+      ...frontmatter,
+      body,
+    }))
+    .sort((left, right) =>
+      String(right.publishedOn ?? "").localeCompare(
+        String(left.publishedOn ?? ""),
+      ),
+    )
+
+const loadPages = (): Array<PageContent> =>
+  readMdxCollection<Omit<PageContent, "body">>("pages").map(
+    ({ frontmatter, body }) => ({
+      ...frontmatter,
+      body,
+    }),
+  )
+
+const uniqueTags = (posts: Array<BlogPost>) =>
+  Array.from(new Set(posts.flatMap(post => post.tags ?? [])))
+
+const uniqueAuthors = (posts: Array<BlogPost>) =>
+  Array.from(
+    posts
+      .flatMap(post => post.authors ?? [])
+      .reduce((authors, author) => {
+        if (author.identity) authors.set(author.identity, author)
+        return authors
+      }, new Map()),
+  ).map(([, author]) => author)
+
+const createPages: GatsbyNode["createPages"] = async ({ actions }) => {
   const { createPage } = actions
 
   const postTemplate = resolve("./src/templates/Blog/Post.tsx")
   const postsTemplate = resolve("./src/templates/Blog/Posts.tsx")
+  const pageTemplate = resolve("./src/templates/Page.tsx")
 
-  const result: { errors?: Array<Error>; data?: ListOfPosts } = await graphql(`
-    query ListOfPosts {
-      allContentfulPost {
-        nodes {
-          title
-          slug
-          tags
-          authors {
-            identity
-            name
-            profile
-          }
-        }
-      }
-    }
-  `)
+  const posts = loadBlogPosts()
+  const pages = loadPages()
 
-  if (result.errors) {
-    reporter.panicOnBuild(
-      `There was an error loading your Contentful posts`,
-      result.errors,
-    )
-    return
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const posts = result.data!.allContentfulPost.nodes
-
-  forEach(posts, (post, index) => {
-    const previousPostSlug = index === 0 ? null : posts[index - 1]?.slug
-    const nextPostSlug =
-      index === posts.length - 1 ? null : posts[index + 1]?.slug
-
+  posts.forEach((post, index) => {
     createPage({
       path: `/blog/post/${post.slug}/`,
       component: postTemplate,
       context: {
-        slug: post.slug,
-        previousPostSlug,
-        nextPostSlug,
+        post,
+        previous: posts[index + 1] ?? null,
+        next: posts[index - 1] ?? null,
       },
     })
   })
@@ -101,26 +143,24 @@ const createPages: GatsbyNode["createPages"] = async ({
     component: postsTemplate,
     context: {
       title: `Blog`,
-      caption:
-        "Grammatica loquitur, Dialectia vera docet, Rhetorica verba ministrat, Musica canit, Arithmetica munerat, Geometrica ponderat, Astronomica colit astra.",
+      caption: blogCaption,
+      posts,
     },
   })
 
-  const tags = uniq(flatten(map(posts, post => post.tags)))
-  const authors = uniq(flatten(map(posts, post => post.authors)))
-
-  forEach(tags, tag => {
+  uniqueTags(posts).forEach(tag => {
     createPage({
       path: `/blog/tag/${tag}/`,
       component: postsTemplate,
       context: {
         title: `Tag: ${tag}`,
         tag,
+        posts: posts.filter(post => post.tags?.includes(tag)),
       },
     })
   })
 
-  forEach(authors, author => {
+  uniqueAuthors(posts).forEach(author => {
     createPage({
       path: `/blog/author/${author.identity}/`,
       component: postsTemplate,
@@ -128,6 +168,21 @@ const createPages: GatsbyNode["createPages"] = async ({
         title: `Author: ${author.name}`,
         caption: author.profile,
         authorId: author.identity,
+        posts: posts.filter(post =>
+          post.authors?.some(
+            postAuthor => postAuthor.identity === author.identity,
+          ),
+        ),
+      },
+    })
+  })
+
+  pages.forEach(page => {
+    createPage({
+      path: `/${page.slug}/`,
+      component: pageTemplate,
+      context: {
+        page,
       },
     })
   })

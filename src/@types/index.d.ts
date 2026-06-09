@@ -51,4 +51,8 @@ declare namespace Incipe {
   }
 }
 
+declare module "*.purs" {
+  export const mkNotFound: () => React.ReactElement
+}
+
 export as namespace Incipe

@@ -37,3 +37,5 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: pages deploy --project-name=incipe-dev output/astro
+      - name: Check deployed site
+        run: nix develop -c npm run check:deployed-site

@@ -66,17 +66,8 @@ jobs:
       - name: Install pnpm dependencies
         run: nix develop -c pnpm install --frozen-lockfile
 
-      - name: Check formatting
-        run: nix develop -c pnpm run format:check
-
-      - name: Run unit tests
-        run: nix develop -c pnpm run test
-
-      - name: Run lint
-        run: nix develop -c pnpm run lint
-
-      - name: Run typecheck
-        run: nix develop -c pnpm run typecheck
+      - name: Run static checks
+        run: nix develop -c pnpm run check:static
 
       - name: Check content files
         run: nix develop -c pnpm run check:content
@@ -84,11 +75,5 @@ jobs:
       - name: Build site
         run: nix develop -c pnpm run build
 
-      - name: Check Astro route contract
-        run: nix develop -c pnpm run check:routes --output-dir output/astro
-
-      - name: Check Astro head metadata
-        run: nix develop -c pnpm run check:astro-head
-
-      - name: Check static artifacts
-        run: nix develop -c pnpm run check:static-artifacts
+      - name: Check build output
+        run: nix develop -c pnpm run check:build-output

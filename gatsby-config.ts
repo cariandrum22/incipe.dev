@@ -58,9 +58,6 @@ const config: GatsbyConfig = {
       },
     },
     `gatsby-plugin-svgr-svgo`,
-    `gatsby-plugin-image`,
-    `gatsby-transformer-sharp`,
-    `gatsby-plugin-sharp`,
     {
       resolve: "gatsby-plugin-google-tagmanager",
       options: {

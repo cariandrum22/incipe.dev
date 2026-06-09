@@ -1,3 +1,3 @@
-import { mkNotFound } from "../../purs/Pages/NotFound.purs"
+import NotFoundView from "../views/NotFoundView"
 
-export default mkNotFound()
+export default NotFoundView

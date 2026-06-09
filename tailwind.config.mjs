@@ -6,7 +6,6 @@ export default {
     "./src/components/**/*.tsx",
     "./src/templates/**/*.tsx",
     "./src/views/**/*.tsx",
-    "./purs/**/*.purs",
   ],
   theme: {
     extend: {

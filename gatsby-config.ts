@@ -21,7 +21,6 @@ const config: GatsbyConfig = {
   graphqlTypegen: true,
   siteMetadata,
   plugins: [
-    `gatsby-plugin-purescript`,
     {
       resolve: `gatsby-plugin-typescript`,
       options: {
@@ -34,7 +33,7 @@ const config: GatsbyConfig = {
     {
       resolve: `gatsby-plugin-purgecss`,
       options: {
-        content: [`gatsby-ssr.tsx`, `src/**/*.tsx`, `purs/**/*.purs`],
+        content: [`gatsby-ssr.tsx`, `src/**/*.tsx`],
         tailwind: true,
         purgeOnly: [`styles/styles.css`],
       },

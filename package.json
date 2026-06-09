@@ -117,6 +117,7 @@
     "check:content": "node scripts/check-content.mjs",
     "check:astro-render": "node scripts/check-astro-render-parity.mjs",
     "check:routes": "node scripts/check-routes.mjs",
+    "check:static-artifacts": "node scripts/check-static-artifacts.mjs",
     "develop": "gatsby develop",
     "develop:astro": "astro dev --config astro.config.mjs",
     "export:contentful": "node scripts/export-contentful-mdx.mjs",

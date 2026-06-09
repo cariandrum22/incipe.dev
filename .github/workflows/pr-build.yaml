@@ -71,3 +71,6 @@ jobs:
 
       - name: Build site
         run: nix develop -c npm run build
+
+      - name: Check route contract
+        run: nix develop -c npm run check:routes

@@ -26,6 +26,7 @@ jobs:
           nix develop -c npm install --legacy-peer-deps
           nix develop -c npm run check:content
           nix develop -c npm run build
+          nix develop -c npm run check:routes
       - name: Publish
         uses: cloudflare/wrangler-action@v3
         with:

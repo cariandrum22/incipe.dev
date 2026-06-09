@@ -69,12 +69,6 @@ jobs:
       - name: Check content files
         run: nix develop -c npm run check:content
 
-      - name: Build site
-        run: nix develop -c npm run build
-
-      - name: Check route contract
-        run: nix develop -c npm run check:routes
-
       - name: Build Astro site
         run: nix develop -c npm run build:astro
 
@@ -86,6 +80,3 @@ jobs:
 
       - name: Check static artifacts
         run: nix develop -c npm run check:static-artifacts
-
-      - name: Check Astro render parity
-        run: nix develop -c npm run check:astro-render

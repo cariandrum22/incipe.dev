@@ -3,15 +3,36 @@ import typescript from "typescript-eslint"
 import typescriptParser from "@typescript-eslint/parser"
 import prettier from "eslint-config-prettier"
 import globals from "globals"
+import importPlugin from "eslint-plugin-import"
+import jsxA11y from "eslint-plugin-jsx-a11y"
 import react from "eslint-plugin-react"
+import reactHooks from "eslint-plugin-react-hooks"
 import tailwindcss from "eslint-plugin-tailwindcss"
 
+const tsconfigRootDir = new URL(".", import.meta.url).pathname
+
 export default [
+  {
+    ignores: [
+      ".astro/",
+      ".cache/",
+      ".spago/",
+      "node_modules/",
+      "output/",
+      "public/",
+    ],
+  },
   js.configs.recommended,
   typescript.configs.eslintRecommended,
   ...typescript.configs.strict,
-  prettier,
+  importPlugin.flatConfigs.recommended,
+  importPlugin.flatConfigs.typescript,
+  react.configs.flat.recommended,
+  react.configs.flat["jsx-runtime"],
+  jsxA11y.flatConfigs.recommended,
+  ...tailwindcss.configs["flat/recommended"],
   {
+    files: ["**/*.{js,mjs,ts,tsx}"],
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -22,16 +43,16 @@ export default [
           jsx: true,
         },
         project: "./tsconfig.eslint.json",
+        tsconfigRootDir,
       },
     },
     plugins: {
-      react: react,
-      typescript: typescript,
-      tailwindcss: tailwindcss,
+      "react-hooks": reactHooks,
     },
     rules: {
-      ...react.configs.recommended.rules,
-      ...typescript.configs.recommended.rules,
+      ...reactHooks.configs.recommended.rules,
+      "import/no-unresolved": "off",
+      "tailwindcss/enforces-shorthand": "off",
     },
     settings: {
       react: {
@@ -40,7 +61,21 @@ export default [
     },
   },
   {
-    files: ["scripts/**/*.mjs"],
+    files: ["src/components/StyledMDXComponent.tsx"],
+    rules: {
+      "jsx-a11y/heading-has-content": "off",
+    },
+  },
+  {
+    files: [
+      "*.config.{js,mjs,ts}",
+      "astro.config.mjs",
+      "eslint.config.mjs",
+      "postcss.config.js",
+      "tailwind.config.mjs",
+      "vitest.config.ts",
+      "scripts/**/*.mjs",
+    ],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -60,13 +95,5 @@ export default [
       "@typescript-eslint/no-shadow": ["off"],
     },
   },
-  {
-    files: ["postcss.config.js"],
-    languageOptions: {
-      sourceType: "commonjs",
-    },
-  },
-  {
-    ignores: [".astro/", ".cache/", ".spago/", "public/", "output/"],
-  },
+  prettier,
 ]

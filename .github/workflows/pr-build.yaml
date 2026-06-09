@@ -69,6 +69,12 @@ jobs:
       - name: Run unit tests
         run: nix develop -c pnpm run test
 
+      - name: Run lint
+        run: nix develop -c pnpm run lint
+
+      - name: Run typecheck
+        run: nix develop -c pnpm run typecheck
+
       - name: Check content files
         run: nix develop -c pnpm run check:content
 

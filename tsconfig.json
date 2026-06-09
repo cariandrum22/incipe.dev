@@ -27,6 +27,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
+    "./astro/**/*.ts",
     "./src/**/*",
     "./gatsby-node.ts",
     "./gatsby-config.ts",

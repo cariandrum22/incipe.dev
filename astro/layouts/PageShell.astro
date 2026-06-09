@@ -1,0 +1,52 @@
+---
+import "katex/dist/katex.min.css"
+import "prismjs/themes/prism-twilight.css"
+import "../../styles/styles.css"
+
+import Layout from "../../src/components/Layout"
+import { buildSeoData } from "../../src/lib/seo"
+import type { SeoInput } from "../../src/lib/seo"
+
+type Props = SeoInput & {
+  redirectTo?: string
+}
+
+const { redirectTo, ...seoInput } = Astro.props
+const seo = buildSeoData(seoInput)
+const title =
+  seo.title === seo.defaultTitle
+    ? seo.defaultTitle
+    : (seo.titleTemplate ?? "%s").replace("%s", seo.title)
+const meta = seo.meta.filter(
+  item => typeof item.content === "string" && item.content.length > 0,
+)
+---
+
+<!doctype html>
+<html lang={seo.lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title}</title>
+    {
+      redirectTo && (
+        <meta http-equiv="refresh" content={`0;url=${redirectTo}`} />
+      )
+    }
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fira+Code"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP"
+    />
+    {meta.map(item => <meta {...item} />)}
+  </head>
+  <body>
+    <Layout>
+      <slot />
+    </Layout>
+  </body>
+</html>

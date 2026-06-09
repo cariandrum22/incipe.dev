@@ -6,6 +6,7 @@ export default {
     "./src/components/**/*.tsx",
     "./src/templates/**/*.tsx",
     "./src/views/**/*.tsx",
+    "./astro/**/*.astro",
   ],
   theme: {
     extend: {

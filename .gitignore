@@ -190,6 +190,9 @@ dist
 public
 src/gatsby-types.d.ts
 
+# Astro files
+.astro/
+
 # vuepress build output
 .vuepress/dist
 

@@ -1,0 +1,15 @@
+---
+import PageShell from "../../layouts/PageShell.astro"
+import BlogPostsView from "../../../src/views/BlogPostsView"
+import { loadBlogIndexRoute } from "../../lib/siteRouteData"
+
+const route = loadBlogIndexRoute()
+---
+
+<PageShell title={route.title} description={route.caption}>
+  <BlogPostsView
+    title={route.title}
+    caption={route.caption}
+    posts={route.posts}
+  />
+</PageShell>

@@ -67,6 +67,6 @@ export default [
     },
   },
   {
-    ignores: [".cache/", ".spago/", "public/", "output/"],
+    ignores: [".astro/", ".cache/", ".spago/", "public/", "output/"],
   },
 ]

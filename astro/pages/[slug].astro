@@ -1,0 +1,22 @@
+---
+import PageShell from "../layouts/PageShell.astro"
+import PageView from "../../src/views/PageView"
+import { loadSiteRouteData } from "../lib/siteRouteData"
+import type { PageRouteData } from "../../src/lib/routeData"
+
+type Props = {
+  route: PageRouteData
+}
+
+export const getStaticPaths = () =>
+  loadSiteRouteData().pages.map(route => ({
+    params: { slug: route.page.slug },
+    props: { route },
+  }))
+
+const { route } = Astro.props
+---
+
+<PageShell title={route.page.title ?? "No title."}>
+  <PageView page={route.page} />
+</PageShell>

@@ -74,3 +74,9 @@ jobs:
 
       - name: Check route contract
         run: nix develop -c npm run check:routes
+
+      - name: Build Astro site
+        run: nix develop -c npm run build:astro
+
+      - name: Check Astro route contract
+        run: nix develop -c npm run check:routes -- --output-dir output/astro

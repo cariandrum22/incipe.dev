@@ -1,0 +1,26 @@
+---
+import PageShell from "../../../layouts/PageShell.astro"
+import BlogPostsView from "../../../../src/views/BlogPostsView"
+import { loadBlogTagRoutes } from "../../../lib/siteRouteData"
+import type { BlogPostsRouteData } from "../../../../src/lib/routeData"
+
+type Props = {
+  route: BlogPostsRouteData
+}
+
+export const getStaticPaths = () =>
+  loadBlogTagRoutes().map(route => ({
+    params: { tag: route.tag },
+    props: { route },
+  }))
+
+const { route } = Astro.props
+---
+
+<PageShell title={route.title}>
+  <BlogPostsView
+    title={route.title}
+    caption={route.caption}
+    posts={route.posts}
+  />
+</PageShell>

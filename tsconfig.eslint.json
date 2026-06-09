@@ -2,9 +2,11 @@
   "extends": "./tsconfig.json",
   "include": [
     "src",
+    "astro",
     "scripts",
     "tests",
     "gatsby-*.ts*",
+    "astro.config.mjs",
     "postcss.config.js",
     "tailwind.config.mjs",
     "eslint.config.mjs"

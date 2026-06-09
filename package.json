@@ -74,6 +74,19 @@
     "typescript-eslint": "^8.37.0"
   },
   "overrides": {
+    "@parcel/bundler-default": "2.16.4",
+    "@parcel/cache": "2.16.4",
+    "@parcel/compressor-raw": "2.16.4",
+    "@parcel/core": "2.16.4",
+    "@parcel/namer-default": "2.16.4",
+    "@parcel/optimizer-terser": "2.16.4",
+    "@parcel/packager-js": "2.16.4",
+    "@parcel/packager-raw": "2.16.4",
+    "@parcel/reporter-dev-server": "2.16.4",
+    "@parcel/resolver-default": "2.16.4",
+    "@parcel/runtime-js": "2.16.4",
+    "@parcel/transformer-js": "2.16.4",
+    "@parcel/transformer-json": "2.16.4",
     "axios": "1.17.0",
     "body-parser": "1.20.3",
     "cookie": "1.0.2",
@@ -86,6 +99,7 @@
     "serialize-javascript": "7.0.5",
     "tmp": "0.2.7",
     "uuid": "14.0.0",
+    "webpack": "$webpack",
     "webpack-dev-middleware": "7.4.2",
     "cross-spawn": "7.0.6"
   },

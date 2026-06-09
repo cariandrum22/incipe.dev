@@ -95,6 +95,7 @@
   "scripts": {
     "postinstall": "spago install",
     "build": "gatsby build",
+    "check:content": "node scripts/check-content.mjs",
     "develop": "gatsby develop",
     "export:contentful": "node scripts/export-contentful-mdx.mjs",
     "localize:content-assets": "node scripts/localize-content-assets.mjs",

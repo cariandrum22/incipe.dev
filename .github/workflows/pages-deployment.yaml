@@ -24,6 +24,7 @@ jobs:
           GOOGLE_TAGMANAGER_PREVIEW: ${{ secrets.GOOGLE_TAGMANAGER_PREVIEW }}
         run: |
           nix develop -c npm install --legacy-peer-deps
+          nix develop -c npm run check:content
           nix develop -c npm run build
       - name: Publish
         uses: cloudflare/wrangler-action@v3

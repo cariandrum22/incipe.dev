@@ -66,5 +66,8 @@ jobs:
       - name: Install npm dependencies
         run: nix develop -c npm ci --legacy-peer-deps
 
+      - name: Check content files
+        run: nix develop -c npm run check:content
+
       - name: Build site
         run: nix develop -c npm run build

@@ -1,70 +1,19 @@
 import React from "react"
-import { graphql } from "gatsby"
 import Blog from "../../components/organisms/Blog"
-import type { ContentfulPost } from "../../types/contentful"
+import type { BlogPost } from "../../types/content"
 
 type Props = {
-  data: {
-    posts: {
-      nodes: Array<ContentfulPost>
-    }
-  }
   pageContext: {
     title: string
-    caption: string
+    caption?: string
+    posts: Array<BlogPost>
   }
 }
 
-const Posts: React.FC<Props> = ({ data, pageContext }) => (
+const Posts: React.FC<Props> = ({ pageContext }) => (
   <Blog title={pageContext.title} caption={pageContext.caption}>
-    {data.posts.nodes}
+    {pageContext.posts}
   </Blog>
 )
 
-const query = graphql`
-  query Posts($tag: [String], $authorId: String) {
-    posts: allContentfulPost(
-      sort: { publishedOn: DESC }
-      filter: {
-        authors: { elemMatch: { identity: { eq: $authorId } } }
-        tags: { in: $tag }
-      }
-    ) {
-      nodes {
-        slug
-        title
-        description {
-          description
-        }
-        heroImage {
-          gatsbyImageData(layout: FULL_WIDTH, placeholder: BLURRED, width: 1280)
-          resize(height: 630, width: 1200) {
-            src
-          }
-        }
-        body {
-          body
-        }
-        tags
-        authors {
-          identity
-          name
-          picture {
-            gatsbyImageData(
-              layout: FULL_WIDTH
-              placeholder: BLURRED
-              width: 1280
-            )
-            resize(height: 250, width: 250) {
-              src
-            }
-          }
-        }
-        publishedOn
-      }
-    }
-  }
-`
-
 export default Posts
-export { query }

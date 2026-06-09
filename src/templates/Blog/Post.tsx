@@ -1,5 +1,5 @@
 import React from "react"
-import { graphql, Link } from "gatsby"
+import { Link } from "gatsby"
 import { getImageSrc } from "../../components/atoms/Image"
 import useReadingTime from "../../hooks/useReadingTime"
 import SEO from "../../components/SEO"
@@ -7,52 +7,47 @@ import Tags from "../../components/atoms/Tags"
 import Hero from "../../components/molecules/Hero"
 import StyledMDXComponent from "../../components/StyledMDXComponent"
 import DummyText from "../../constants/Dummy/Text"
-import type { ContentfulPost } from "../../types/contentful"
+import Date from "../../components/atoms/Date"
+import type { BlogPost, BlogPostPreview } from "../../types/content"
 
 type Props = {
-  data: {
-    post: ContentfulPost
-    previous: ContentfulPost | null
-    next: ContentfulPost | null
+  pageContext: {
+    post: BlogPost
+    previous: BlogPostPreview | null
+    next: BlogPostPreview | null
   }
 }
 
 const Post: React.FC<Props> = props => {
-  const { post, previous, next } = props.data
+  const { post, previous, next } = props.pageContext
 
   const title = post.title ?? "No title."
-  const description = post.description?.description ?? "No description given."
+  const description = post.description ?? "No description given."
   const authors = ((): string => {
     const names = post.authors?.map(author => author?.name)
     if (names) return names.join(", ")
     return "John Due"
   })()
-  const { minutes } = useReadingTime(post.body?.body ?? "No body.")
+  const { minutes } = useReadingTime(post.body)
   let imageSrc
-  if (post.heroImage?.gatsbyImageData) {
-    imageSrc = getImageSrc(post.heroImage.gatsbyImageData)
+  if (post.heroImage) {
+    imageSrc = getImageSrc(post.heroImage)
   }
-  const body = post.body?.body ?? DummyText
+  const body = post.body ?? DummyText
   const tags = post.tags ?? ["No tags."]
 
   return (
     <div className="relative mx-auto max-w-7xl bg-white px-4 py-16 sm:px-6 md:justify-between lg:px-8 lg:pb-28 lg:pt-8">
       <SEO title={title} description={description} image={imageSrc} />
-      {post.heroImage?.gatsbyImageData && (
-        <Hero
-          image={post.heroImage.gatsbyImageData}
-          title={title}
-          content={description}
-        />
+      {post.heroImage && (
+        <Hero image={post.heroImage} title={title} content={description} />
       )}
       <div className="flex items-center justify-between">
         <Tags tags={tags} />
         <div className="text-base font-thin text-slate-700">
           {authors} &middot;&nbsp;
-          {post.publishedOn && (
-            <time dateTime={post.publishedOn}>{post.publishedOn}</time>
-          )}
-          – {minutes} minute read
+          {post.publishedOn && <Date>{post.publishedOn}</Date>}– {minutes}{" "}
+          minute read
         </div>
       </div>
       <div className="prose max-w-full">
@@ -90,44 +85,4 @@ const Post: React.FC<Props> = props => {
   )
 }
 
-const query = graphql`
-  query PostBySlug(
-    $slug: String!
-    $previousPostSlug: String
-    $nextPostSlug: String
-  ) {
-    post: contentfulPost(slug: { eq: $slug }) {
-      slug
-      title
-      description {
-        description
-      }
-      heroImage {
-        gatsbyImageData(layout: FULL_WIDTH, placeholder: BLURRED, width: 1280)
-        resize(height: 630, width: 1200) {
-          src
-        }
-      }
-      body {
-        body
-      }
-      tags
-      authors {
-        name
-      }
-      publishedOn(formatString: "MMMM Do, YYYY")
-      rawDate: publishedOn
-    }
-    previous: contentfulPost(slug: { eq: $previousPostSlug }) {
-      slug
-      title
-    }
-    next: contentfulPost(slug: { eq: $nextPostSlug }) {
-      slug
-      title
-    }
-  }
-`
-
 export default Post
-export { query }

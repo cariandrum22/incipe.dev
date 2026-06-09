@@ -1,11 +1,11 @@
 import React from "react"
 import Card from "../molecules/Card"
-import type { ContentfulPost } from "../../types/contentful"
+import type { BlogPost } from "../../types/content"
 
 type Props = {
   title: string
-  caption: string
-  children: Array<ContentfulPost>
+  caption?: string
+  children: Array<BlogPost>
 }
 
 const Blog: React.FC<Props> = ({ title, caption, children }) => (
@@ -18,9 +18,11 @@ const Blog: React.FC<Props> = ({ title, caption, children }) => (
         <h2 className="text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">
           {title}
         </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-base text-gray-500 sm:mt-4">
-          {caption}
-        </p>
+        {caption && (
+          <p className="mx-auto mt-3 max-w-2xl text-base text-gray-500 sm:mt-4">
+            {caption}
+          </p>
+        )}
       </div>
       <div className="mx-auto mt-12 grid max-w-lg gap-5 lg:max-w-none lg:grid-cols-3">
         {children.map(post => (

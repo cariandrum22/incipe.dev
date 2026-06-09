@@ -4,11 +4,15 @@ import { siteMetadata } from "./src/config/siteMetadata"
 
 dotenv.config({
   path: `.env.${process.env["NODE_ENV"]}.local`,
+  quiet: true,
 })
 
 type SiteMap = {
-  allSitePage: { nodes: object }
-  allContentfulPost: { nodes: object }
+  allSitePage: { nodes: Array<SitePage> }
+}
+
+type SitePage = {
+  path: string
 }
 
 const googleFontsCSSAPI = `https://fonts.googleapis.com/css2`
@@ -17,28 +21,6 @@ const config: GatsbyConfig = {
   graphqlTypegen: true,
   siteMetadata,
   plugins: [
-    {
-      resolve: `gatsby-source-contentful`,
-      options: {
-        spaceId: process.env["CONTENTFUL_SPACE_ID"],
-        accessToken: process.env["CONTENTFUL_ACCESS_TOKEN"],
-        host:
-          process.env["NODE_ENV"] === "production"
-            ? `cdn.contentful.com`
-            : `preview.contentful.com`,
-      },
-    },
-    {
-      resolve: `gatsby-source-graphql`,
-      options: {
-        typeName: `HASURA`,
-        fieldName: `hasura`,
-        url: `https://incipe.hasura.app/v1/graphql`,
-        headers: {
-          "x-hasura-admin-secret": process.env["HASURA_ADMIN_SECRET"],
-        },
-      },
-    },
     `gatsby-plugin-purescript`,
     {
       resolve: `gatsby-plugin-typescript`,
@@ -100,12 +82,6 @@ const config: GatsbyConfig = {
               path
             }
           }
-          allContentfulPost {
-            nodes {
-              publishedOn
-              slug
-            }
-          }
           site {
             siteMetadata {
               siteUrl
@@ -113,25 +89,10 @@ const config: GatsbyConfig = {
           }
         }
         `,
-        resolvePages: ({
-          allSitePage: { nodes: allPages },
-          allContentfulPost: { nodes: allContentfulNodes },
-        }: SiteMap) => {
-          const contentfulNodeMap = allContentfulNodes.reduce((acc, node) => {
-            const pagePath = `/blog/post/${node.slug}/`
-            acc[pagePath] = node
-
-            return acc
-          }, {})
-
-          return allPages.map(page => ({
-            ...page,
-            ...contentfulNodeMap[page.path],
-          }))
-        },
-        serialize: ({ path: pagePath, publishedOn }) => ({
+        resolvePages: ({ allSitePage: { nodes: allPages } }: SiteMap) =>
+          allPages,
+        serialize: ({ path: pagePath }: SitePage) => ({
           url: pagePath,
-          lastmodISO: publishedOn,
         }),
       },
     },

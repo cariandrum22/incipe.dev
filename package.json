@@ -28,8 +28,6 @@
     "gatsby-plugin-svgr-svgo": "^2.0.0",
     "gatsby-plugin-typescript": "^5.14.0",
     "gatsby-remark-prismjs": "^7.14.0",
-    "gatsby-source-contentful": "^8.15.0",
-    "gatsby-source-graphql": "^5.14.0",
     "gatsby-transformer-remark": "^6.14.0",
     "gatsby-transformer-sharp": "^5.14.0",
     "katex": "^0.16.22",
@@ -55,7 +53,6 @@
   "devDependencies": {
     "@babel/plugin-proposal-decorators": "^7.28.0",
     "@types/mdx": "^2.0.13",
-    "@types/mdx-js__react": "^2.0.0",
     "@types/node": "^24.0.14",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",

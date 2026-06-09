@@ -29,6 +29,11 @@ jobs:
           nix develop -c pnpm run check:routes --output-dir output/astro
           nix develop -c pnpm run check:astro-head
           nix develop -c pnpm run check:static-artifacts
+      - name: Set up pnpm for Wrangler Action
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+          run_install: false
       - name: Publish
         uses: cloudflare/wrangler-action@v4
         with:

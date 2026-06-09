@@ -81,6 +81,9 @@ jobs:
       - name: Check Astro route contract
         run: nix develop -c npm run check:routes -- --output-dir output/astro
 
+      - name: Check Astro head metadata
+        run: nix develop -c npm run check:astro-head
+
       - name: Check static artifacts
         run: nix develop -c npm run check:static-artifacts
 

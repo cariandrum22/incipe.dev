@@ -27,6 +27,7 @@ jobs:
           nix develop -c npm run check:content
           nix develop -c npm run build:astro
           nix develop -c npm run check:routes -- --output-dir output/astro
+          nix develop -c npm run check:astro-head
           nix develop -c npm run check:static-artifacts
       - name: Publish
         uses: cloudflare/wrangler-action@v4

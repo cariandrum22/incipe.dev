@@ -1,5 +1,5 @@
 import React from "react"
-import Blog from "../../components/organisms/Blog"
+import BlogPostsView from "../../views/BlogPostsView"
 import type { BlogPost } from "../../types/content"
 
 type Props = {
@@ -11,9 +11,11 @@ type Props = {
 }
 
 const Posts: React.FC<Props> = ({ pageContext }) => (
-  <Blog title={pageContext.title} caption={pageContext.caption}>
-    {pageContext.posts}
-  </Blog>
+  <BlogPostsView
+    title={pageContext.title}
+    caption={pageContext.caption}
+    posts={pageContext.posts}
+  />
 )
 
 export default Posts

@@ -5,7 +5,7 @@ const BYNCND: Incipe.CreativeCommons.License = {
   abbreviation: "BY-NC-ND",
   deed: new URL("https://creativecommons.org/licenses/by-nc-nd/4.0/"),
   leagalCode: new URL(
-    "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode"
+    "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode",
   ),
   button: BYNCNDButton,
   version: 4.0,

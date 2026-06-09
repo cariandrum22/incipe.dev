@@ -11,11 +11,7 @@ type Props = {
 const Hero: React.FC<Props> = ({ image, title, content }) => (
   <div>
     {image && (
-      <Image
-        alt={title}
-        image={image}
-        className="h-96 w-full object-cover"
-      />
+      <Image alt={title} image={image} className="h-96 w-full object-cover" />
     )}
     <div className="pt-10">
       <h1 className="border-b border-slate-500 pb-4 text-2xl text-slate-700">

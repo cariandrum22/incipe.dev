@@ -78,7 +78,8 @@
     "export:contentful": "node scripts/export-contentful-mdx.mjs",
     "localize:content-assets": "node scripts/localize-content-assets.mjs",
     "format": "pnpm run format:eslint && pnpm run format:prettier",
-    "format:prettier": "prettier --write \"**/*.{js,jsx,mjs,ts,tsx,json,md}\"",
+    "format:prettier": "prettier --write \"**/*.{js,jsx,mjs,ts,tsx,json,md,yml,yaml}\" \".github/**/*.{yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,mjs,ts,tsx,json,md,yml,yaml}\" \".github/**/*.{yml,yaml}\"",
     "format:eslint": "eslint --fix \"**/*.{js,jsx,mjs,ts,tsx}\"",
     "start": "astro dev --config astro.config.mjs",
     "serve": "astro preview --config astro.config.mjs",
@@ -86,7 +87,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint . --max-warnings=0"
   },
   "repository": {
     "type": "git",

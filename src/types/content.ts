@@ -17,16 +17,9 @@ export type ContentAuthor = {
   profile?: Nullable<string>
 }
 
-export type ContentfulExportMetadata = {
-  contentType?: Nullable<string>
-  entryId?: Nullable<string>
-  updatedAt?: Nullable<string>
-}
-
 export type BlogPost = {
   authors?: Nullable<Array<ContentAuthor>>
   body: string
-  contentful?: Nullable<ContentfulExportMetadata>
   description?: Nullable<string>
   heroImage?: Nullable<ContentImage>
   publishedOn?: Nullable<string>
@@ -39,7 +32,6 @@ export type BlogPostPreview = Pick<BlogPost, "slug" | "title">
 
 export type PageContent = {
   body: string
-  contentful?: Nullable<ContentfulExportMetadata>
   slug?: Nullable<string>
   title?: Nullable<string>
 }

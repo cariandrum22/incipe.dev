@@ -4,9 +4,7 @@ import { copyFile, mkdir } from "node:fs/promises"
 import path from "node:path"
 import process from "node:process"
 
-const outputRoot = path.resolve(
-  process.env["ASTRO_OUTPUT_DIR"] ?? "output/astro",
-)
+const outputRoot = path.resolve(process.env["ASTRO_OUTPUT_DIR"] ?? "dist")
 const notFoundHtml = path.join(outputRoot, "404.html")
 const notFoundRouteDirectory = path.join(outputRoot, "404")
 

@@ -1,4 +1,4 @@
-import BYNDButton from "../../../assets/CreativeCommons/button/by-nd.svg"
+import BYNDButton from "../../assets/CreativeCommons/button/by-nd.svg"
 
 const BYND: Incipe.CreativeCommons.License = {
   name: "Attribution-NoDerivs",

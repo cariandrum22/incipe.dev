@@ -1,0 +1,10 @@
+---
+import PageShell from "../layouts/PageShell.astro"
+import IndexView from "../views/IndexView"
+import { blogIndexPath } from "../lib/routes"
+import { siteMetadata } from "../config/siteMetadata"
+---
+
+<PageShell title={siteMetadata.title} redirectTo={blogIndexPath}>
+  <IndexView />
+</PageShell>

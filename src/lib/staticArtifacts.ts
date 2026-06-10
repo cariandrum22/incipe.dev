@@ -1,5 +1,5 @@
-import { siteMetadata } from "../../src/config/siteMetadata"
-import { rootPath } from "../../src/lib/routes"
+import { siteMetadata } from "../config/siteMetadata"
+import { rootPath } from "./routes"
 import { loadSiteRouteData } from "./siteRouteData"
 
 export const robotsPath = "/robots.txt"

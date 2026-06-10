@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url"
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.resolve(scriptDir, "..")
-const defaultOutputDir = process.env["ASTRO_HEAD_OUTPUT_DIR"] ?? "output/astro"
+const defaultOutputDir = process.env["ASTRO_HEAD_OUTPUT_DIR"] ?? "dist"
 const defaultTitle = "incipe.dev"
 const defaultDescription = "This is my personal portfolio and blog site."
 const blogCaption =

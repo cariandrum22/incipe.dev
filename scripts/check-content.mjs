@@ -10,6 +10,7 @@ const projectRoot = path.resolve(scriptDir, "..")
 const contentRoot = path.join(projectRoot, "src", "content")
 const publicRoot = path.join(projectRoot, "public")
 const contentfulAssetPattern = /(?:https:)?\/\/images\.ctfassets\.net\//u
+const contentfulLocalAssetPattern = /\/content-assets\/contentful\//u
 const markdownImagePattern = /!\[[^\]]*\]\((?<url>[^)\s]+)(?:\s+"[^"]*")?\)/gu
 
 const main = async () => {
@@ -46,7 +47,7 @@ const validateBlogPosts = async () => {
       ...validateNoContentfulFrontmatter("blog", document),
       ...validateBody("blog", document),
       ...(await validateMarkdownImages("blog", document)),
-      ...validateNoContentfulAssetUrls("blog", document),
+      ...validateNoContentfulAssetReferences("blog", document),
     )
   }
 
@@ -68,7 +69,7 @@ const validatePages = async () => {
       ...validateNoContentfulFrontmatter("pages", document),
       ...validateBody("pages", document),
       ...(await validateMarkdownImages("pages", document)),
-      ...validateNoContentfulAssetUrls("pages", document),
+      ...validateNoContentfulAssetReferences("pages", document),
     )
   }
 
@@ -355,7 +356,7 @@ const validateMarkdownImages = async (collection, document) => {
   return errors
 }
 
-const validateNoContentfulAssetUrls = (collection, document) => {
+const validateNoContentfulAssetReferences = (collection, document) => {
   const errors = [...document.parseErrors]
 
   if (
@@ -363,6 +364,13 @@ const validateNoContentfulAssetUrls = (collection, document) => {
     contentfulAssetPattern.test(document.body)
   ) {
     errors.push("contains Contentful CDN URL")
+  }
+
+  if (
+    contentfulLocalAssetPattern.test(document.frontmatterSource) ||
+    contentfulLocalAssetPattern.test(document.body)
+  ) {
+    errors.push("contains Contentful-namespaced local asset path")
   }
 
   return errors.map(error => `${collection}/${document.fileName}: ${error}`)

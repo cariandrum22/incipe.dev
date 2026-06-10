@@ -16,6 +16,7 @@ export default [
     ignores: [
       ".astro/",
       ".cache/",
+      "dist/",
       ".spago/",
       "node_modules/",
       "output/",

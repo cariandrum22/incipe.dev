@@ -1,4 +1,4 @@
-import BYButton from "../../../assets/CreativeCommons/button/by.svg"
+import BYButton from "../../assets/CreativeCommons/button/by.svg"
 
 const BY: Incipe.CreativeCommons.License = {
   name: "Attribution",

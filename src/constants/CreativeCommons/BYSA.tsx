@@ -1,4 +1,4 @@
-import BYSAButton from "../../../assets/CreativeCommons/button/by-sa.svg"
+import BYSAButton from "../../assets/CreativeCommons/button/by-sa.svg"
 
 const BYSA: Incipe.CreativeCommons.License = {
   name: "Attribution-ShareAlike",

@@ -4,7 +4,7 @@ export default {
   content: [
     "./src/components/**/*.tsx",
     "./src/views/**/*.tsx",
-    "./astro/**/*.astro",
+    "./src/**/*.astro",
   ],
   theme: {
     extend: {

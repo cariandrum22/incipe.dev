@@ -187,7 +187,6 @@ dist
 
 # Gatsby files
 .cache/
-public
 src/gatsby-types.d.ts
 
 # Astro files

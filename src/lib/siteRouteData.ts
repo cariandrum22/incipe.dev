@@ -1,8 +1,8 @@
 import { resolve } from "node:path"
-import { loadBlogPosts, loadPages } from "../../src/lib/content"
-import { buildSiteRouteData } from "../../src/lib/routeData"
-import { blogIndexPath } from "../../src/lib/routes"
-import type { BlogPostsRouteData } from "../../src/lib/routeData"
+import { loadBlogPosts, loadPages } from "./content"
+import { buildSiteRouteData } from "./routeData"
+import { blogIndexPath } from "./routes"
+import type { BlogPostsRouteData } from "./routeData"
 
 type BlogAuthorRouteData = BlogPostsRouteData & {
   authorId: string

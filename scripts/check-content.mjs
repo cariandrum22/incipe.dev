@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url"
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.resolve(scriptDir, "..")
 const contentRoot = path.join(projectRoot, "src", "content")
-const staticRoot = path.join(projectRoot, "static")
+const publicRoot = path.join(projectRoot, "public")
 const contentfulAssetPattern = /(?:https:)?\/\/images\.ctfassets\.net\//u
 const markdownImagePattern = /!\[[^\]]*\]\((?<url>[^)\s]+)(?:\s+"[^"]*")?\)/gu
 
@@ -404,7 +404,7 @@ const localAssetExists = async publicPath => {
   const relativePath = publicPath.replace(/^\/+/u, "")
 
   try {
-    await access(path.join(staticRoot, relativePath))
+    await access(path.join(publicRoot, relativePath))
     return true
   } catch {
     return false

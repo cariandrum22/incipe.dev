@@ -8,7 +8,11 @@ import { fileURLToPath } from "node:url"
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.resolve(scriptDir, "..")
 const contentRoot = path.join(projectRoot, "src", "content")
-const staticAssetRoot = path.join(projectRoot, "static", "content-assets")
+const publicAssetRootDirectory = path.join(
+  projectRoot,
+  "public",
+  "content-assets",
+)
 const publicAssetRoot = "/content-assets"
 const contentfulAssetHost = "images.ctfassets.net"
 const contentfulAssetUrlPattern =
@@ -122,7 +126,7 @@ const assetPathFromUrl = assetUrl => {
   const relativePath = path.join("contentful", assetId, safeFileName)
 
   return {
-    filePath: path.join(staticAssetRoot, relativePath),
+    filePath: path.join(publicAssetRootDirectory, relativePath),
     publicPath: `${publicAssetRoot}/${relativePath.replaceAll(path.sep, "/")}`,
   }
 }

@@ -8,8 +8,7 @@ import { fileURLToPath } from "node:url"
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.resolve(scriptDir, "..")
-const defaultOutputDir =
-  process.env["STATIC_ARTIFACTS_OUTPUT_DIR"] ?? "output/astro"
+const defaultOutputDir = process.env["STATIC_ARTIFACTS_OUTPUT_DIR"] ?? "dist"
 const siteUrl = process.env["SITE_URL"] ?? "https://incipe.dev"
 const sitemapIndexPath = "/sitemap-index.xml"
 const sitemapPath = "/sitemap-0.xml"

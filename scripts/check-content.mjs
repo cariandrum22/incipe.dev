@@ -43,7 +43,7 @@ const validateBlogPosts = async () => {
       ...validateStringArray("blog", document, "tags"),
       ...validateAuthors(document),
       ...validateImage("blog", document, "heroImage", frontmatter["heroImage"]),
-      ...validateContentfulMetadata("blog", document),
+      ...validateNoContentfulFrontmatter("blog", document),
       ...validateBody("blog", document),
       ...(await validateMarkdownImages("blog", document)),
       ...validateNoContentfulAssetUrls("blog", document),
@@ -65,7 +65,7 @@ const validatePages = async () => {
       ...validateFileNameMatchesSlug("pages", document),
       ...validateRequiredString("pages", document, "title"),
       ...validateRequiredString("pages", document, "slug"),
-      ...validateContentfulMetadata("pages", document),
+      ...validateNoContentfulFrontmatter("pages", document),
       ...validateBody("pages", document),
       ...(await validateMarkdownImages("pages", document)),
       ...validateNoContentfulAssetUrls("pages", document),
@@ -313,39 +313,16 @@ const validateImage = (collection, document, key, value) => {
   return errors
 }
 
-const validateContentfulMetadata = (collection, document) => {
-  const metadata = document.frontmatter["contentful"]
-  if (metadata == null) return []
-
-  if (!isPlainObject(metadata)) {
-    return [`${collection}/${document.fileName}: contentful must be an object`]
-  }
-
-  return [
-    ...validateObjectString(
-      collection,
-      document,
-      "contentful.entryId",
-      metadata["entryId"],
-    ),
-    ...validateObjectString(
-      collection,
-      document,
-      "contentful.contentType",
-      metadata["contentType"],
-    ),
-    ...validateObjectString(
-      collection,
-      document,
-      "contentful.updatedAt",
-      metadata["updatedAt"],
-    ),
-  ]
-}
-
 const validateBody = (collection, document) => {
   if (document.body.trim().length > 0) return []
   return [`${collection}/${document.fileName}: body must be non-empty`]
+}
+
+const validateNoContentfulFrontmatter = (collection, document) => {
+  if (!Object.hasOwn(document.frontmatter, "contentful")) return []
+  return [
+    `${collection}/${document.fileName}: contentful export metadata is not part of local MDX content`,
+  ]
 }
 
 const validateMarkdownImages = async (collection, document) => {
